@@ -1,0 +1,126 @@
+:root {
+  --bg: #f8fafc;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --primary: #aa3bff;
+  --primary-glow: rgba(170, 59, 255, 0.2);
+  --secondary: #06b6d4;
+  --surface: rgba(255, 255, 255, 0.7);
+  --border: rgba(0, 0, 0, 0.05);
+  --glass-blur: blur(12px);
+  --card-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  --danger: #ef4444;
+  --success: #22c55e;
+}
+
+[data-theme="dark"] {
+  --bg: #09090b;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --primary: #c084fc;
+  --primary-glow: rgba(192, 132, 252, 0.2);
+  --secondary: #22d3ee;
+  --surface: rgba(24, 24, 27, 0.6);
+  --border: rgba(255, 255, 255, 0.1);
+  --card-shadow: 0 4px 30px rgba(0,0,0,0.5);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+}
+
+/* Glassmorphism Panel */
+.glass-panel {
+  background: var(--surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+  border-radius: 16px;
+}
+
+/* Buttons */
+.btn {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 0 15px var(--primary-glow);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--surface);
+}
+
+/* Typography */
+h1, h2, h3, h4, p {
+  margin: 0;
+}
+
+/* Forms */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.input-group label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.input-field {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-field:focus {
+  border-color: var(--primary);
+}
+
+/* Utility layout */
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 8px; }
+.gap-4 { gap: 16px; }
+.gap-6 { gap: 24px; }
