@@ -124,8 +124,12 @@ const LeadTable = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, 
           ))}
           {leads.length === 0 && (
             <tr>
-              <td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                No pending leads. Great job!
+              <td colSpan="5" style={{ textAlign: 'center', padding: '64px 32px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ fontSize: '3rem', opacity: 0.5 }}>✨</div>
+                  <div style={{ color: 'var(--text)', fontWeight: 600, fontSize: '1.2rem' }}>No leads found</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem', maxWidth: '300px' }}>Your pipeline is clear. Add a new lead to start recovering revenue!</div>
+                </div>
               </td>
             </tr>
           )}

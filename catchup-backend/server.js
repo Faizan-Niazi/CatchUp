@@ -21,6 +21,11 @@ app.get('/api/leads', (req, res) => {
 // Add a new lead
 app.post('/api/leads', (req, res) => {
   const { name, email, value, status = 'Pending', daysWaiting = 0, autoFollowUp = true, targetDays = 4, customMessage = '', projectName = 'Project' } = req.body;
+  
+  if (!name || !email || typeof value !== 'number' || value <= 0) {
+    return res.status(400).json({ error: 'Invalid input data. Name, email, and a positive value are required.' });
+  }
+
   const sql = `INSERT INTO leads (name, email, value, status, daysWaiting, autoFollowUp, targetDays, customMessage, projectName) VALUES (?,?,?,?,?,?,?,?,?)`;
   const params = [name, email, value, status, daysWaiting, autoFollowUp ? 1 : 0, targetDays, customMessage, projectName];
   
@@ -172,15 +177,25 @@ setInterval(() => {
               emailSuccess = true;
             } catch (err) {
               msg = `Email failed for ${lead.name}: ${err.message}`;
+              emailSuccess = false;
             }
+          } else {
+            // Simulated success
+            emailSuccess = true;
           }
           
-          db.run(`UPDATE leads SET status = 'Contacted' WHERE id = ?`, [lead.id], (err) => {
-            if (!err) {
-              db.run(`INSERT INTO activity_logs (message) VALUES (?)`, [msg]);
-              console.log('🤖 ' + msg);
-            }
-          });
+          if (emailSuccess) {
+            db.run(`UPDATE leads SET status = 'Contacted' WHERE id = ?`, [lead.id], (err) => {
+              if (!err) {
+                db.run(`INSERT INTO activity_logs (message) VALUES (?)`, [msg]);
+                console.log('🤖 ' + msg);
+              }
+            });
+          } else {
+            // Just log the error, don't update status so it tries again next time
+            db.run(`INSERT INTO activity_logs (message) VALUES (?)`, [msg]);
+            console.log('❌ ' + msg);
+          }
         });
       });
     });

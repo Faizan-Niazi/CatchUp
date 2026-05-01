@@ -9,7 +9,7 @@ const ReportsView = ({ leads, currency }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '800px', margin: '0 auto' }}>
-      <div className="glass-panel">
+      <div className="glass-panel" style={{ padding: '32px' }}>
         <h2 style={{ marginBottom: '8px' }}>Recovery Analytics</h2>
         <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>A high-level view of your pipeline performance.</p>
         

@@ -28,7 +28,7 @@ const SettingsView = ({ currentSettings, onSettingsSaved }) => {
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
-      <div className="glass-panel">
+      <div className="glass-panel" style={{ padding: '32px' }}>
         <h2 style={{ marginBottom: '24px' }}>General Settings</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div className="input-group">
@@ -42,7 +42,7 @@ const SettingsView = ({ currentSettings, onSettingsSaved }) => {
         </div>
       </div>
 
-      <div className="glass-panel">
+      <div className="glass-panel" style={{ padding: '32px' }}>
         <h2 style={{ marginBottom: '24px' }}>Email Templates</h2>
         <div className="input-group">
           <label>Default Follow-up Message</label>
@@ -51,7 +51,7 @@ const SettingsView = ({ currentSettings, onSettingsSaved }) => {
         </div>
       </div>
 
-      <div className="glass-panel">
+      <div className="glass-panel" style={{ padding: '32px' }}>
         <h2 style={{ marginBottom: '16px' }}>Real Email Configuration (SMTP)</h2>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px' }}>Configure these to send actual emails. Leave blank to run in simulation mode.</p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>

@@ -2,27 +2,27 @@
   --bg: #f8fafc;
   --text: #0f172a;
   --text-muted: #64748b;
-  --primary: #aa3bff;
-  --primary-glow: rgba(170, 59, 255, 0.2);
-  --secondary: #06b6d4;
-  --surface: rgba(255, 255, 255, 0.7);
-  --border: rgba(0, 0, 0, 0.05);
-  --glass-blur: blur(12px);
-  --card-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  --primary: #8b5cf6;
+  --primary-glow: rgba(139, 92, 246, 0.25);
+  --secondary: #0ea5e9;
+  --surface: rgba(255, 255, 255, 0.8);
+  --border: rgba(0, 0, 0, 0.08);
+  --glass-blur: blur(16px);
+  --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
   --danger: #ef4444;
-  --success: #22c55e;
+  --success: #10b981;
 }
 
 [data-theme="dark"] {
-  --bg: #09090b;
+  --bg: #030712;
   --text: #f8fafc;
   --text-muted: #94a3b8;
-  --primary: #c084fc;
-  --primary-glow: rgba(192, 132, 252, 0.2);
-  --secondary: #22d3ee;
-  --surface: rgba(24, 24, 27, 0.6);
-  --border: rgba(255, 255, 255, 0.1);
-  --card-shadow: 0 4px 30px rgba(0,0,0,0.5);
+  --primary: #a78bfa;
+  --primary-glow: rgba(167, 139, 250, 0.25);
+  --secondary: #38bdf8;
+  --surface: rgba(17, 24, 39, 0.5);
+  --border: rgba(255, 255, 255, 0.08);
+  --card-shadow: 0 8px 30px rgba(0,0,0,0.4);
 }
 
 * {
@@ -31,10 +31,10 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Outfit', sans-serif;
   background-color: var(--bg);
   color: var(--text);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.4s ease, color 0.4s ease;
   min-height: 100vh;
 }
 
@@ -45,7 +45,7 @@ body {
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--border);
   box-shadow: var(--card-shadow);
-  border-radius: 16px;
+  border-radius: 20px;
 }
 
 /* Buttons */
@@ -124,3 +124,40 @@ h1, h2, h3, h4, p {
 .gap-2 { gap: 8px; }
 .gap-4 { gap: 16px; }
 .gap-6 { gap: 24px; }
+
+/* Toast Notifications */
+.toast-container {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 9999;
+}
+
+.toast {
+  padding: 14px 24px;
+  border-radius: 12px;
+  color: white;
+  font-weight: 500;
+  font-size: 0.95rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.toast-success {
+  background: var(--success);
+}
+
+.toast-error {
+  background: var(--danger);
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}

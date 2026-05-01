@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+import { useToast } from './ToastContext';
+
 const EditLeadModal = ({ lead, onClose, onEdit, currency }) => {
   const [name, setName] = useState(lead.name);
   const [email, setEmail] = useState(lead.email);
@@ -7,10 +9,16 @@ const EditLeadModal = ({ lead, onClose, onEdit, currency }) => {
   const [value, setValue] = useState(lead.value);
   const [targetDays, setTargetDays] = useState(lead.targetDays || 4);
   const [customMessage, setCustomMessage] = useState(lead.customMessage || '');
+  const { addToast } = useToast();
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name || !value) return;
+    
+    if (parseFloat(value) <= 0) {
+      addToast('Deal value must be greater than 0', 'error');
+      return;
+    }
     
     onEdit({
       name,

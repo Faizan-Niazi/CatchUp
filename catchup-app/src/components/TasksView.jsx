@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
+import { useToast } from './ToastContext';
+
 const TasksView = () => {
   const [tasks, setTasks] = useState([]);
   const [newTaskText, setNewTaskText] = useState('');
+  const { addToast } = useToast();
 
   useEffect(() => {
     fetch('http://localhost:5000/api/tasks')
@@ -23,25 +26,32 @@ const TasksView = () => {
       .then(saved => {
         setTasks([saved, ...tasks]);
         setNewTaskText('');
-      });
+        addToast('Task added', 'success');
+      })
+      .catch(() => addToast('Failed to add task', 'error'));
   };
 
   const toggleTask = (id, currentStatus) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !currentStatus } : t));
     fetch(`http://localhost:5000/api/tasks/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ completed: !currentStatus })
-    });
+    }).then(() => {
+      setTasks(tasks.map(t => t.id === id ? { ...t, completed: !currentStatus } : t));
+    }).catch(() => addToast('Failed to update task', 'error'));
   };
 
   const deleteTask = (id) => {
-    setTasks(tasks.filter(t => t.id !== id));
-    fetch(`http://localhost:5000/api/tasks/${id}`, { method: 'DELETE' });
+    fetch(`http://localhost:5000/api/tasks/${id}`, { method: 'DELETE' })
+      .then(() => {
+        setTasks(tasks.filter(t => t.id !== id));
+        addToast('Task deleted', 'success');
+      })
+      .catch(() => addToast('Failed to delete task', 'error'));
   };
 
   return (
-    <div className="glass-panel" style={{ maxWidth: '600px', margin: '0 auto' }}>
+    <div className="glass-panel" style={{ maxWidth: '600px', margin: '0 auto', padding: '32px' }}>
       <h2 style={{ marginBottom: '24px' }}>Manual Tasks</h2>
       
       <form onSubmit={addTask} style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
