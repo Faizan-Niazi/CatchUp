@@ -2,7 +2,34 @@
 
 CatchUp is a full-stack Revenue Recovery platform designed to help freelancers and agencies automatically follow up with pending deals and recover lost revenue. It features an automated backend engine that tracks deal age and dispatches SMTP follow-up emails, combined with a sleek, glassmorphism-inspired React frontend.
 
-![CatchUp Dashboard](https://via.placeholder.com/800x400.png?text=CatchUp+Dashboard) <!-- Replace with an actual screenshot of your app -->
+![CatchUp Banner](catchup-app/src/assets/hero.png)
+
+## 📸 Application Showcase
+
+<details open>
+<summary><b>Dashboard View</b></summary>
+<br>
+<img src="catchup-app/src/assets/Screenshot%202026-05-02%20003751.jpg" alt="Dashboard View" width="100%">
+</details>
+
+<details>
+<summary><b>Adding a New Lead</b></summary>
+<br>
+<img src="catchup-app/src/assets/add_new_lead.jpg" alt="Add Lead Modal" width="100%">
+</details>
+
+<details>
+<summary><b>Analytics & Reports</b></summary>
+<br>
+<img src="catchup-app/src/assets/reports.jpg" alt="Reports View" width="100%">
+</details>
+
+<details>
+<summary><b>Configuration Settings</b></summary>
+<br>
+<img src="catchup-app/src/assets/setting.jpg" alt="Settings View" width="100%">
+</details>
+
 
 ## ✨ Key Features
 - **Automated Follow-up Engine**: A Node.js background process that tracks lead waiting times and automatically sends customized emails via SMTP.
