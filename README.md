@@ -10,7 +10,7 @@ CatchUp is a full-stack Revenue Recovery platform designed to help freelancers a
 <summary><b>Dashboard View</b></summary>
 <br>
 
-![Dashboard View](catchup-app/src/assets/Screenshot%202026-05-02%20003751.jpg)
+![Dashboard View](catchup-app/src/assets/dashboard.jpg)
 </details>
 
 <details>
