@@ -9,25 +9,29 @@ CatchUp is a full-stack Revenue Recovery platform designed to help freelancers a
 <details open>
 <summary><b>Dashboard View</b></summary>
 <br>
-<img src="catchup-app/src/assets/Screenshot%202026-05-02%20003751.jpg" alt="Dashboard View" width="100%">
+
+![Dashboard View](catchup-app/src/assets/Screenshot%202026-05-02%20003751.jpg)
 </details>
 
 <details>
 <summary><b>Adding a New Lead</b></summary>
 <br>
-<img src="catchup-app/src/assets/add_new_lead.jpg" alt="Add Lead Modal" width="100%">
+
+![Add Lead Modal](catchup-app/src/assets/add_new_lead.jpg)
 </details>
 
 <details>
 <summary><b>Analytics & Reports</b></summary>
 <br>
-<img src="catchup-app/src/assets/reports.jpg" alt="Reports View" width="100%">
+
+![Reports View](catchup-app/src/assets/reports.jpg)
 </details>
 
 <details>
 <summary><b>Configuration Settings</b></summary>
 <br>
-<img src="catchup-app/src/assets/setting.jpg" alt="Settings View" width="100%">
+
+![Settings View](catchup-app/src/assets/setting.jpg)
 </details>
 
 
