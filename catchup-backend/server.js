@@ -3,11 +3,16 @@ const cors = require('cors');
 const db = require('./database');
 const nodemailer = require('nodemailer');
 
+const path = require('path');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+
+// Serve the frontend static files in production
+app.use(express.static(path.join(__dirname, '../catchup-app/dist')));
 
 // Get all leads
 app.get('/api/leads', (req, res) => {
@@ -202,6 +207,14 @@ setInterval(() => {
   });
 }, 10000);
 
+// For any other route, send the React index.html file
+app.get('*', (req, res) => {
+  if (req.originalUrl.startsWith('/api')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+  res.sendFile(path.join(__dirname, '../catchup-app/dist/index.html'));
+});
+
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

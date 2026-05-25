@@ -5,7 +5,7 @@ const ActivityFeed = () => {
 
   useEffect(() => {
     const fetchLogs = () => {
-      fetch('http://localhost:5000/api/logs')
+      fetch('/api/logs')
         .then(res => res.json())
         .then(data => setLogs(data))
         .catch(err => console.error("Failed to fetch logs", err));

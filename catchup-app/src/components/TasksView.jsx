@@ -8,7 +8,7 @@ const TasksView = () => {
   const { addToast } = useToast();
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/tasks')
+    fetch('/api/tasks')
       .then(res => res.json())
       .then(data => setTasks(data))
       .catch(err => console.error(err));
@@ -17,7 +17,7 @@ const TasksView = () => {
   const addTask = (e) => {
     e.preventDefault();
     if (!newTaskText.trim()) return;
-    fetch('http://localhost:5000/api/tasks', {
+    fetch('/api/tasks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: newTaskText })
@@ -32,7 +32,7 @@ const TasksView = () => {
   };
 
   const toggleTask = (id, currentStatus) => {
-    fetch(`http://localhost:5000/api/tasks/${id}`, {
+    fetch(`/api/tasks/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ completed: !currentStatus })
@@ -42,7 +42,7 @@ const TasksView = () => {
   };
 
   const deleteTask = (id) => {
-    fetch(`http://localhost:5000/api/tasks/${id}`, { method: 'DELETE' })
+    fetch(`/api/tasks/${id}`, { method: 'DELETE' })
       .then(() => {
         setTasks(tasks.filter(t => t.id !== id));
         addToast('Task deleted', 'success');

@@ -1,0 +1,8 @@
+node_modules
+catchup-app/node_modules
+catchup-backend/node_modules
+catchup-app/dist
+catchup.db
+.git
+.gitignore
+README.md

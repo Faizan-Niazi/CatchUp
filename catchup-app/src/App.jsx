@@ -32,8 +32,8 @@ function App() {
     const fetchData = async () => {
       try {
         const [leadsRes, settingsRes] = await Promise.all([
-          fetch('http://localhost:5000/api/leads'),
-          fetch('http://localhost:5000/api/settings')
+          fetch('/api/leads'),
+          fetch('/api/settings')
         ]);
         if (leadsRes.ok && settingsRes.ok) {
           const leadsData = await leadsRes.json();
@@ -51,7 +51,7 @@ function App() {
     
     fetchData();
     const interval = setInterval(() => {
-      fetch('http://localhost:5000/api/leads')
+      fetch('/api/leads')
         .then(res => res.json())
         .then(data => setLeads(data))
         .catch(() => {});
@@ -60,7 +60,7 @@ function App() {
   }, [addToast]);
 
   const addLead = (newLeadData) => {
-    fetch('http://localhost:5000/api/leads', {
+    fetch('/api/leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newLeadData)
@@ -73,7 +73,7 @@ function App() {
   };
 
   const deleteLead = (id) => {
-    fetch(`http://localhost:5000/api/leads/${id}`, { method: 'DELETE' })
+    fetch(`/api/leads/${id}`, { method: 'DELETE' })
       .then(() => {
         setLeads(leads.filter(l => l.id !== id));
         addToast('Lead deleted', 'success');
@@ -82,7 +82,7 @@ function App() {
   };
 
   const editLead = (id, updatedData) => {
-    fetch(`http://localhost:5000/api/leads/${id}`, {
+    fetch(`/api/leads/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedData)
@@ -93,7 +93,7 @@ function App() {
   };
 
   const markAsPaid = (id) => {
-    fetch(`http://localhost:5000/api/leads/${id}`, {
+    fetch(`/api/leads/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'Recovered' })
@@ -107,7 +107,7 @@ function App() {
     const lead = leads.find(l => l.id === id);
     if (!lead) return;
     const newStatus = !lead.autoFollowUp;
-    fetch(`http://localhost:5000/api/leads/${id}`, {
+    fetch(`/api/leads/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ autoFollowUp: newStatus })
@@ -182,7 +182,7 @@ function App() {
           <SettingsView 
             currentSettings={settings} 
             onSettingsSaved={() => {
-              fetch('http://localhost:5000/api/settings').then(res => res.json()).then(setSettings);
+              fetch('/api/settings').then(res => res.json()).then(setSettings);
               addToast('Settings saved successfully', 'success');
             }} 
           />

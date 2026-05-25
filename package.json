@@ -1,0 +1,11 @@
+{
+  "name": "catchup",
+  "version": "1.0.0",
+  "description": "Revenue Recovery SaaS - Full Stack Deployment Wrapper",
+  "scripts": {
+    "install-all": "npm install --prefix catchup-backend && npm install --prefix catchup-app",
+    "build-frontend": "npm run build --prefix catchup-app",
+    "build": "npm run install-all && npm run build-frontend",
+    "start": "npm start --prefix catchup-backend"
+  }
+}
