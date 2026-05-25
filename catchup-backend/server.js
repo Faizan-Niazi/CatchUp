@@ -208,7 +208,7 @@ setInterval(() => {
 }, 10000);
 
 // For any other route, send the React index.html file
-app.get('*', (req, res) => {
+app.use((req, res, next) => {
   if (req.originalUrl.startsWith('/api')) {
     return res.status(404).json({ error: 'API endpoint not found' });
   }
