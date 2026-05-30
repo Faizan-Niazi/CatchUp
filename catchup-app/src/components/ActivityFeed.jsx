@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-const ActivityFeed = () => {
+const ActivityFeed = ({ token }) => {
   const [logs, setLogs] = useState([]);
 
   useEffect(() => {
     const fetchLogs = () => {
-      fetch('/api/logs')
+      if (!token) return;
+      fetch('/api/logs', { headers: { 'Authorization': `Bearer ${token}` } })
         .then(res => res.json())
         .then(data => setLogs(data))
         .catch(err => console.error("Failed to fetch logs", err));

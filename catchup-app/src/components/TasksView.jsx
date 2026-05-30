@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 
 import { useToast } from './ToastContext';
 
-const TasksView = () => {
+const TasksView = ({ token }) => {
   const [tasks, setTasks] = useState([]);
   const [newTaskText, setNewTaskText] = useState('');
   const { addToast } = useToast();
 
+  const authHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
   useEffect(() => {
-    fetch('/api/tasks')
+    if (!token) return;
+    fetch('/api/tasks', { headers: authHeaders })
       .then(res => res.json())
       .then(data => setTasks(data))
       .catch(err => console.error(err));
@@ -19,7 +22,7 @@ const TasksView = () => {
     if (!newTaskText.trim()) return;
     fetch('/api/tasks', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders,
       body: JSON.stringify({ text: newTaskText })
     })
       .then(res => res.json())
@@ -34,7 +37,7 @@ const TasksView = () => {
   const toggleTask = (id, currentStatus) => {
     fetch(`/api/tasks/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders,
       body: JSON.stringify({ completed: !currentStatus })
     }).then(() => {
       setTasks(tasks.map(t => t.id === id ? { ...t, completed: !currentStatus } : t));
@@ -42,7 +45,7 @@ const TasksView = () => {
   };
 
   const deleteTask = (id) => {
-    fetch(`/api/tasks/${id}`, { method: 'DELETE' })
+    fetch(`/api/tasks/${id}`, { method: 'DELETE', headers: authHeaders })
       .then(() => {
         setTasks(tasks.filter(t => t.id !== id));
         addToast('Task deleted', 'success');

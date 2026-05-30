@@ -8,8 +8,16 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.error('Error opening database', err.message);
   } else {
     console.log('Connected to the SQLite database.');
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      name TEXT NOT NULL
+    )`);
+
     db.run(`CREATE TABLE IF NOT EXISTS leads (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER,
       name TEXT NOT NULL,
       email TEXT NOT NULL,
       value REAL NOT NULL,
@@ -31,30 +39,32 @@ const db = new sqlite3.Database(dbPath, (err) => {
     db.run(`ALTER TABLE settings ADD COLUMN smtpUser TEXT DEFAULT ''`, () => {});
     db.run(`ALTER TABLE settings ADD COLUMN smtpPass TEXT DEFAULT ''`, () => {});
 
+    // Add userId to existing tables
+    db.run(`ALTER TABLE leads ADD COLUMN userId INTEGER`, () => {});
+    db.run(`ALTER TABLE tasks ADD COLUMN userId INTEGER`, () => {});
+    db.run(`ALTER TABLE activity_logs ADD COLUMN userId INTEGER`, () => {});
+    db.run(`ALTER TABLE settings ADD COLUMN userId INTEGER`, () => {});
+
     db.run(`CREATE TABLE IF NOT EXISTS activity_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER,
       message TEXT NOT NULL,
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
     db.run(`CREATE TABLE IF NOT EXISTS tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER,
       text TEXT NOT NULL,
       completed BOOLEAN DEFAULT 0
     )`);
     db.run(`CREATE TABLE IF NOT EXISTS settings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER,
       followUpDelay INTEGER DEFAULT 4,
       emailTemplate TEXT DEFAULT 'Hi {name},\n\nJust checking in on the proposal I sent over. Let me know if you have any questions!\n\nBest,'
     )`, (err) => {
-      if (!err) {
-        // Insert default setting if table is empty
-        db.get('SELECT COUNT(*) as count FROM settings', (err, row) => {
-          if (row && row.count === 0) {
-            db.run(`INSERT INTO settings (followUpDelay, emailTemplate) VALUES (4, 'Hi {name},\n\nJust checking in on the proposal I sent over. Let me know if you have any questions!\n\nBest,')`);
-          }
-        });
-      }
+      // We don't seed default settings globally anymore since it's per-user.
     });
   }
 });

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const LeadTable = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, currency }) => {
+const LeadTable = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, onGeneratePaymentLink, currency }) => {
   const [expandedRows, setExpandedRows] = useState(new Set());
 
   const toggleRow = (id) => {
@@ -73,6 +73,15 @@ const LeadTable = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, 
                         title="Mark as Paid"
                       >
                         ✅
+                      </button>
+                    )}
+                    {lead.status !== 'Recovered' && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onGeneratePaymentLink(lead.id); }}
+                        style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '4px', fontSize: '1.2rem' }}
+                        title="Copy Payment Link"
+                      >
+                        💳
                       </button>
                     )}
                     <button 

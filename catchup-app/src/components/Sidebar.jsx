@@ -45,11 +45,14 @@ const Sidebar = ({ theme, toggleTheme, currentView, setView }) => {
           {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
         </button>
         <div className="sidebar-profile flex items-center gap-3">
-          <img src="https://ui-avatars.com/api/?name=Admin&background=random&color=fff&rounded=true" alt="Admin" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Admin User</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pro Plan</div>
+          <img src={`https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random&color=fff&rounded=true`} alt="Avatar" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.name || 'User'}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>SaaS User</div>
           </div>
+          <button onClick={onLogout} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.2rem', padding: '4px' }} title="Log out">
+            🚪
+          </button>
         </div>
       </div>
     </aside>

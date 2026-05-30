@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const SettingsView = ({ currentSettings, onSettingsSaved }) => {
+const SettingsView = ({ currentSettings, onSettingsSaved, token }) => {
   const [currency, setCurrency] = useState(currentSettings.currency || '$');
   const [followUpDelay, setFollowUpDelay] = useState(currentSettings.followUpDelay || 4);
   const [emailTemplate, setEmailTemplate] = useState(currentSettings.emailTemplate || '');
@@ -11,11 +11,13 @@ const SettingsView = ({ currentSettings, onSettingsSaved }) => {
   
   const [saving, setSaving] = useState(false);
 
+  const authHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
   const handleSave = () => {
     setSaving(true);
     fetch('/api/settings', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders,
       body: JSON.stringify({ currency, followUpDelay: parseInt(followUpDelay), emailTemplate, smtpHost, smtpPort: parseInt(smtpPort), smtpUser, smtpPass })
     })
       .then(res => res.json())

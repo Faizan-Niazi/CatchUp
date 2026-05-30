@@ -9,10 +9,14 @@ import SettingsView from './components/SettingsView';
 import LeadsView from './components/LeadsView';
 import TasksView from './components/TasksView';
 import ReportsView from './components/ReportsView';
+import AuthView from './components/AuthView';
 import { useToast } from './components/ToastContext';
 import './App.css';
 
 function App() {
+  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
+  
   const [theme, setTheme] = useState('dark');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState(null);
@@ -28,18 +32,43 @@ function App() {
 
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
+  const handleAuthSuccess = (newToken, newUser) => {
+    localStorage.setItem('token', newToken);
+    localStorage.setItem('user', JSON.stringify(newUser));
+    setToken(newToken);
+    setUser(newUser);
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+    setLeads([]);
+  };
+
+  const authHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
   useEffect(() => {
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+    
     const fetchData = async () => {
       try {
         const [leadsRes, settingsRes] = await Promise.all([
-          fetch('/api/leads'),
-          fetch('/api/settings')
+          fetch('/api/leads', { headers: authHeaders }),
+          fetch('/api/settings', { headers: authHeaders })
         ]);
         if (leadsRes.ok && settingsRes.ok) {
           const leadsData = await leadsRes.json();
           const settingsData = await settingsRes.json();
           setLeads(leadsData);
           setSettings(settingsData);
+        } else if (leadsRes.status === 401 || leadsRes.status === 403) {
+          logout();
+          addToast('Session expired, please log in again', 'error');
         }
       } catch (err) {
         console.error(err);
@@ -51,20 +80,23 @@ function App() {
     
     fetchData();
     const interval = setInterval(() => {
-      fetch('/api/leads')
-        .then(res => res.json())
-        .then(data => setLeads(data))
-        .catch(() => {});
+      if (token) {
+        fetch('/api/leads', { headers: authHeaders })
+          .then(res => {
+            if (res.ok) return res.json();
+            if (res.status === 401 || res.status === 403) logout();
+            throw new Error('Auth failed');
+          })
+          .then(data => setLeads(data))
+          .catch(() => {});
+      }
     }, 5000);
     return () => clearInterval(interval);
-  }, [addToast]);
+  }, [token, addToast]);
 
   const addLead = (newLeadData) => {
-    fetch('/api/leads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newLeadData)
-    }).then(res => res.json())
+    fetch('/api/leads', { method: 'POST', headers: authHeaders, body: JSON.stringify(newLeadData) })
+      .then(res => res.json())
       .then(savedLead => {
         setLeads([savedLead, ...leads]);
         addToast('Lead added successfully', 'success');
@@ -73,7 +105,7 @@ function App() {
   };
 
   const deleteLead = (id) => {
-    fetch(`/api/leads/${id}`, { method: 'DELETE' })
+    fetch(`/api/leads/${id}`, { method: 'DELETE', headers: authHeaders })
       .then(() => {
         setLeads(leads.filter(l => l.id !== id));
         addToast('Lead deleted', 'success');
@@ -82,44 +114,46 @@ function App() {
   };
 
   const editLead = (id, updatedData) => {
-    fetch(`/api/leads/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedData)
-    }).then(() => {
-      setLeads(leads.map(l => l.id === id ? { ...l, ...updatedData } : l));
-      addToast('Lead updated', 'success');
-    }).catch(() => addToast('Failed to update lead', 'error'));
+    fetch(`/api/leads/${id}`, { method: 'PUT', headers: authHeaders, body: JSON.stringify(updatedData) })
+      .then(() => {
+        setLeads(leads.map(l => l.id === id ? { ...l, ...updatedData } : l));
+        addToast('Lead updated', 'success');
+      }).catch(() => addToast('Failed to update lead', 'error'));
   };
 
   const markAsPaid = (id) => {
-    fetch(`/api/leads/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'Recovered' })
-    }).then(() => {
-      setLeads(leads.map(l => l.id === id ? { ...l, status: 'Recovered' } : l));
-      addToast('Marked as Paid! 🎉', 'success');
-    }).catch(() => addToast('Action failed', 'error'));
+    fetch(`/api/leads/${id}`, { method: 'PUT', headers: authHeaders, body: JSON.stringify({ status: 'Recovered' }) })
+      .then(() => {
+        setLeads(leads.map(l => l.id === id ? { ...l, status: 'Recovered' } : l));
+        addToast('Marked as Paid! 🎉', 'success');
+      }).catch(() => addToast('Action failed', 'error'));
   };
 
   const toggleAutoFollowUp = (id) => {
     const lead = leads.find(l => l.id === id);
     if (!lead) return;
     const newStatus = !lead.autoFollowUp;
-    fetch(`/api/leads/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ autoFollowUp: newStatus })
-    }).then(() => {
-      setLeads(leads.map(l => l.id === id ? { ...l, autoFollowUp: newStatus } : l));
-      addToast(newStatus ? 'Auto follow-up enabled' : 'Auto follow-up disabled', 'success');
-    }).catch(() => addToast('Action failed', 'error'));
+    fetch(`/api/leads/${id}`, { method: 'PUT', headers: authHeaders, body: JSON.stringify({ autoFollowUp: newStatus }) })
+      .then(() => {
+        setLeads(leads.map(l => l.id === id ? { ...l, autoFollowUp: newStatus } : l));
+        addToast(newStatus ? 'Auto follow-up enabled' : 'Auto follow-up disabled', 'success');
+      }).catch(() => addToast('Action failed', 'error'));
   };
 
-  const totalLost = leads.filter(l => l.status === 'Pending').reduce((sum, l) => sum + l.value, 0);
-  const activeLeads = leads.filter(l => l.status !== 'Recovered').length;
-  const recoveredCount = leads.filter(l => l.status === 'Recovered').length;
+  const generatePaymentLink = async (id) => {
+    try {
+      const res = await fetch(`/api/payment-link/${id}`, { method: 'POST', headers: authHeaders });
+      const data = await res.json();
+      if (data.url) {
+        await navigator.clipboard.writeText(data.url);
+        addToast('Payment link copied to clipboard!', 'success');
+      } else {
+        throw new Error(data.error || 'Failed to generate link');
+      }
+    } catch (err) {
+      addToast(err.message, 'error');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -133,16 +167,24 @@ function App() {
     );
   }
 
+  if (!token) {
+    return <AuthView onAuthSuccess={handleAuthSuccess} />;
+  }
+
+  const totalLost = leads.filter(l => l.status === 'Pending').reduce((sum, l) => sum + l.value, 0);
+  const activeLeads = leads.filter(l => l.status !== 'Recovered').length;
+  const recoveredCount = leads.filter(l => l.status === 'Recovered').length;
+
   return (
     <div className="app-container">
-      <Sidebar theme={theme} toggleTheme={toggleTheme} currentView={currentView} setView={setCurrentView} />
+      <Sidebar theme={theme} toggleTheme={toggleTheme} currentView={currentView} setView={setCurrentView} onLogout={logout} user={user} />
       
       <main className="main-content">
         <header className="dashboard-header">
           <div>
             <h1 style={{ marginBottom: '8px', textTransform: 'capitalize' }}>{currentView}</h1>
             <p style={{ color: 'var(--text-muted)' }}>
-              {currentView === 'dashboard' ? 'Welcome back. Here is your revenue breakdown.' : 
+              {currentView === 'dashboard' ? `Welcome back, ${user?.name}. Here is your revenue breakdown.` : 
                currentView === 'settings' ? 'Manage your preferences.' :
                currentView === 'leads' ? 'View and manage your entire pipeline.' :
                currentView === 'tasks' ? 'Track your manual follow-ups.' : 'Analyze your recovery performance.'}
@@ -163,26 +205,27 @@ function App() {
             <div className="dashboard-columns">
               <section className="leads-section glass-panel" style={{ padding: 0 }}>
                 <div className="leads-header" style={{ padding: '24px 24px 0 24px' }}><h2>Pending Follow-ups</h2></div>
-                <LeadTable leads={leads.filter(l => l.status === 'Pending')} toggleAutoFollowUp={toggleAutoFollowUp} deleteLead={deleteLead} onEdit={setEditingLead} markAsPaid={markAsPaid} currency={settings.currency} />
+                <LeadTable leads={leads.filter(l => l.status === 'Pending')} toggleAutoFollowUp={toggleAutoFollowUp} deleteLead={deleteLead} onEdit={setEditingLead} markAsPaid={markAsPaid} onGeneratePaymentLink={generatePaymentLink} currency={settings.currency} />
               </section>
-              <aside className="feed-sidebar"><ActivityFeed /></aside>
+              <aside className="feed-sidebar"><ActivityFeed token={token} /></aside>
             </div>
           </>
         )}
         
         {currentView === 'leads' && (
-          <LeadsView leads={leads} toggleAutoFollowUp={toggleAutoFollowUp} deleteLead={deleteLead} onEdit={setEditingLead} markAsPaid={markAsPaid} currency={settings.currency} />
+          <LeadsView leads={leads} toggleAutoFollowUp={toggleAutoFollowUp} deleteLead={deleteLead} onEdit={setEditingLead} markAsPaid={markAsPaid} onGeneratePaymentLink={generatePaymentLink} currency={settings.currency} />
         )}
 
-        {currentView === 'tasks' && <TasksView />}
+        {currentView === 'tasks' && <TasksView token={token} />}
 
         {currentView === 'reports' && <ReportsView leads={leads} currency={settings.currency} />}
 
         {currentView === 'settings' && (
           <SettingsView 
             currentSettings={settings} 
+            token={token}
             onSettingsSaved={() => {
-              fetch('/api/settings').then(res => res.json()).then(setSettings);
+              fetch('/api/settings', { headers: authHeaders }).then(res => res.json()).then(setSettings);
               addToast('Settings saved successfully', 'success');
             }} 
           />

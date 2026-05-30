@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import LeadTable from './LeadTable';
 
-const LeadsView = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, currency }) => {
+const LeadsView = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, onGeneratePaymentLink, currency }) => {
   const [search, setSearch] = useState('');
 
   const filteredLeads = leads.filter(l => 
@@ -29,6 +29,7 @@ const LeadsView = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, 
         deleteLead={deleteLead} 
         onEdit={onEdit} 
         markAsPaid={markAsPaid} 
+        onGeneratePaymentLink={onGeneratePaymentLink}
         currency={currency} 
       />
     </div>

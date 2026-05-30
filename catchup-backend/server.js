@@ -2,7 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const db = require('./database');
 const nodemailer = require('nodemailer');
-
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_mock_key');
 const path = require('path');
 
 const app = express();
@@ -10,202 +12,313 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET || 'catchup-super-secret-key-123';
 
 // Serve the frontend static files in production
 app.use(express.static(path.join(__dirname, '../catchup-app/dist')));
 
-// Get all leads
-app.get('/api/leads', (req, res) => {
-  db.all('SELECT * FROM leads ORDER BY id DESC', [], (err, rows) => {
+// Middleware to protect routes
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (token == null) return res.status(401).json({ error: 'Unauthorized' });
+  
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Invalid or expired token' });
+    req.user = user;
+    next();
+  });
+};
+
+// --- AUTHENTICATION API ---
+
+app.post('/api/register', async (req, res) => {
+  const { name, email, password } = req.body;
+  if (!name || !email || !password) return res.status(400).json({ error: 'All fields required' });
+  
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    db.run(`INSERT INTO users (name, email, password) VALUES (?, ?, ?)`, [name, email, hashedPassword], function(err) {
+      if (err) return res.status(400).json({ error: 'Email already exists or invalid data' });
+      const userId = this.lastID;
+      // Create default settings for this user
+      db.run(`INSERT INTO settings (userId, followUpDelay, emailTemplate) VALUES (?, 4, 'Hi {name},\n\nJust checking in on the proposal I sent over. Let me know if you have any questions!\n\nBest,')`, [userId]);
+      
+      const token = jwt.sign({ id: userId, email }, JWT_SECRET, { expiresIn: '7d' });
+      res.json({ token, user: { id: userId, name, email } });
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  
+  db.get(`SELECT * FROM users WHERE email = ?`, [email], async (err, user) => {
+    if (err || !user) return res.status(400).json({ error: 'Invalid credentials' });
+    
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) return res.status(400).json({ error: 'Invalid credentials' });
+    
+    const token = jwt.sign({ id: user.id, email }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+  });
+});
+
+app.get('/api/me', authenticateToken, (req, res) => {
+  db.get(`SELECT id, name, email FROM users WHERE id = ?`, [req.user.id], (err, user) => {
+    if (err || !user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  });
+});
+
+// --- LEADS API ---
+
+app.get('/api/leads', authenticateToken, (req, res) => {
+  db.all('SELECT * FROM leads WHERE userId = ? ORDER BY id DESC', [req.user.id], (err, rows) => {
     if (err) return res.status(400).json({ error: err.message });
     const formattedRows = rows.map(r => ({ ...r, autoFollowUp: !!r.autoFollowUp }));
     res.json(formattedRows);
   });
 });
 
-// Add a new lead
-app.post('/api/leads', (req, res) => {
+app.post('/api/leads', authenticateToken, (req, res) => {
   const { name, email, value, status = 'Pending', daysWaiting = 0, autoFollowUp = true, targetDays = 4, customMessage = '', projectName = 'Project' } = req.body;
   
   if (!name || !email || typeof value !== 'number' || value <= 0) {
     return res.status(400).json({ error: 'Invalid input data. Name, email, and a positive value are required.' });
   }
 
-  const sql = `INSERT INTO leads (name, email, value, status, daysWaiting, autoFollowUp, targetDays, customMessage, projectName) VALUES (?,?,?,?,?,?,?,?,?)`;
-  const params = [name, email, value, status, daysWaiting, autoFollowUp ? 1 : 0, targetDays, customMessage, projectName];
+  const sql = `INSERT INTO leads (userId, name, email, value, status, daysWaiting, autoFollowUp, targetDays, customMessage, projectName) VALUES (?,?,?,?,?,?,?,?,?,?)`;
+  const params = [req.user.id, name, email, value, status, daysWaiting, autoFollowUp ? 1 : 0, targetDays, customMessage, projectName];
   
   db.run(sql, params, function(err) {
     if (err) return res.status(400).json({ error: err.message });
-    res.json({ id: this.lastID, name, email, value, status, daysWaiting, autoFollowUp, targetDays, customMessage, projectName });
+    res.json({ id: this.lastID, userId: req.user.id, name, email, value, status, daysWaiting, autoFollowUp, targetDays, customMessage, projectName });
   });
 });
 
-// Toggle auto-follow-up OR full edit OR Status update
-app.put('/api/leads/:id', (req, res) => {
+app.put('/api/leads/:id', authenticateToken, (req, res) => {
   const { autoFollowUp, name, email, value, targetDays, customMessage, projectName, status } = req.body;
+  const leadId = req.params.id;
+  const userId = req.user.id;
   
-  if (status !== undefined && name === undefined) {
-    // Only update status (e.g. Mark as Paid)
-    const sql = `UPDATE leads SET status = ? WHERE id = ?`;
-    db.run(sql, [status, req.params.id], function(err) {
-      if (err) return res.status(400).json({ error: err.message });
-      res.json({ message: 'Updated', changes: this.changes });
-    });
-  } else if (name !== undefined) {
-    // Full Edit
-    const sql = `UPDATE leads SET name=?, email=?, value=?, targetDays=?, customMessage=?, projectName=? WHERE id=?`;
-    db.run(sql, [name, email, value, targetDays, customMessage, projectName, req.params.id], function(err) {
-      if (err) return res.status(400).json({ error: err.message });
-      res.json({ message: 'Updated', changes: this.changes });
-    });
-  } else if (autoFollowUp !== undefined) {
-    // Just toggle
-    const sql = `UPDATE leads SET autoFollowUp = ? WHERE id = ?`;
-    db.run(sql, [autoFollowUp ? 1 : 0, req.params.id], function(err) {
-      if (err) return res.status(400).json({ error: err.message });
-      res.json({ message: 'Updated', changes: this.changes });
-    });
-  } else {
-    res.status(400).json({ error: 'No fields to update' });
-  }
+  // Verify ownership
+  db.get(`SELECT id FROM leads WHERE id = ? AND userId = ?`, [leadId, userId], (err, row) => {
+    if (err || !row) return res.status(404).json({ error: 'Lead not found or unauthorized' });
+
+    if (status !== undefined && name === undefined) {
+      db.run(`UPDATE leads SET status = ? WHERE id = ?`, [status, leadId], function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: 'Updated', changes: this.changes });
+      });
+    } else if (name !== undefined) {
+      const sql = `UPDATE leads SET name=?, email=?, value=?, targetDays=?, customMessage=?, projectName=? WHERE id=?`;
+      db.run(sql, [name, email, value, targetDays, customMessage, projectName, leadId], function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: 'Updated', changes: this.changes });
+      });
+    } else if (autoFollowUp !== undefined) {
+      db.run(`UPDATE leads SET autoFollowUp = ? WHERE id = ?`, [autoFollowUp ? 1 : 0, leadId], function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: 'Updated', changes: this.changes });
+      });
+    } else {
+      res.status(400).json({ error: 'No fields to update' });
+    }
+  });
 });
 
-// Delete a lead
-app.delete('/api/leads/:id', (req, res) => {
-  db.run(`DELETE FROM leads WHERE id = ?`, [req.params.id], function(err) {
+app.delete('/api/leads/:id', authenticateToken, (req, res) => {
+  db.run(`DELETE FROM leads WHERE id = ? AND userId = ?`, [req.params.id, req.user.id], function(err) {
     if (err) return res.status(400).json({ error: err.message });
     res.json({ message: 'Deleted', changes: this.changes });
   });
 });
 
-// -- TASKS API --
-app.get('/api/tasks', (req, res) => {
-  db.all('SELECT * FROM tasks ORDER BY id DESC', [], (err, rows) => {
+app.post('/api/payment-link/:id', authenticateToken, (req, res) => {
+  const leadId = req.params.id;
+  db.get(`SELECT * FROM leads WHERE id = ? AND userId = ?`, [leadId, req.user.id], async (err, lead) => {
+    if (err || !lead) return res.status(404).json({ error: 'Lead not found' });
+    
+    try {
+      if (!process.env.STRIPE_SECRET_KEY) {
+        return res.json({ url: `https://checkout.stripe.com/pay/cs_test_mock_${lead.id}?amount=${lead.value}` });
+      }
+      
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: { name: `Payment for ${lead.projectName || 'Services'} - ${lead.name}` },
+            unit_amount: Math.round(lead.value * 100),
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        success_url: `${req.headers.origin}?payment=success`,
+        cancel_url: `${req.headers.origin}?payment=cancel`,
+      });
+      res.json({ url: session.url });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+});
+
+// --- TASKS API ---
+
+app.get('/api/tasks', authenticateToken, (req, res) => {
+  db.all('SELECT * FROM tasks WHERE userId = ? ORDER BY id DESC', [req.user.id], (err, rows) => {
     if (err) return res.status(400).json({ error: err.message });
     res.json(rows.map(r => ({...r, completed: !!r.completed})));
   });
 });
 
-app.post('/api/tasks', (req, res) => {
+app.post('/api/tasks', authenticateToken, (req, res) => {
   const { text } = req.body;
-  db.run(`INSERT INTO tasks (text, completed) VALUES (?, 0)`, [text], function(err) {
+  db.run(`INSERT INTO tasks (userId, text, completed) VALUES (?, ?, 0)`, [req.user.id, text], function(err) {
     if (err) return res.status(400).json({ error: err.message });
-    res.json({ id: this.lastID, text, completed: false });
+    res.json({ id: this.lastID, userId: req.user.id, text, completed: false });
   });
 });
 
-app.put('/api/tasks/:id', (req, res) => {
+app.put('/api/tasks/:id', authenticateToken, (req, res) => {
   const { completed } = req.body;
-  db.run(`UPDATE tasks SET completed = ? WHERE id = ?`, [completed ? 1 : 0, req.params.id], function(err) {
+  db.run(`UPDATE tasks SET completed = ? WHERE id = ? AND userId = ?`, [completed ? 1 : 0, req.params.id, req.user.id], function(err) {
     if (err) return res.status(400).json({ error: err.message });
     res.json({ success: true });
   });
 });
 
-app.delete('/api/tasks/:id', (req, res) => {
-  db.run(`DELETE FROM tasks WHERE id = ?`, [req.params.id], function(err) {
+app.delete('/api/tasks/:id', authenticateToken, (req, res) => {
+  db.run(`DELETE FROM tasks WHERE id = ? AND userId = ?`, [req.params.id, req.user.id], function(err) {
     if (err) return res.status(400).json({ error: err.message });
     res.json({ success: true });
   });
 });
 
-// Get activity logs
-app.get('/api/logs', (req, res) => {
-  db.all('SELECT * FROM activity_logs ORDER BY id DESC LIMIT 10', [], (err, rows) => {
+// --- LOGS API ---
+
+app.get('/api/logs', authenticateToken, (req, res) => {
+  db.all('SELECT * FROM activity_logs WHERE userId = ? ORDER BY id DESC LIMIT 20', [req.user.id], (err, rows) => {
     if (err) return res.status(400).json({ error: err.message });
     res.json(rows);
   });
 });
 
-// Get settings
-app.get('/api/settings', (req, res) => {
-  db.get('SELECT * FROM settings LIMIT 1', [], (err, row) => {
+// --- SETTINGS API ---
+
+app.get('/api/settings', authenticateToken, (req, res) => {
+  db.get('SELECT * FROM settings WHERE userId = ? LIMIT 1', [req.user.id], (err, row) => {
     if (err) return res.status(400).json({ error: err.message });
     res.json(row || { followUpDelay: 4, emailTemplate: '', currency: '$', smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '' });
   });
 });
 
-// Update settings
-app.post('/api/settings', (req, res) => {
+app.post('/api/settings', authenticateToken, (req, res) => {
   const { followUpDelay, emailTemplate, currency = '$', smtpHost = '', smtpPort = 587, smtpUser = '', smtpPass = '' } = req.body;
-  db.run(`UPDATE settings SET followUpDelay = ?, emailTemplate = ?, currency = ?, smtpHost = ?, smtpPort = ?, smtpUser = ?, smtpPass = ? WHERE id = (SELECT id FROM settings LIMIT 1)`, 
-    [followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass], 
-    function(err) {
-      if (err) return res.status(400).json({ error: err.message });
-      res.json({ success: true });
+  
+  db.get('SELECT id FROM settings WHERE userId = ?', [req.user.id], (err, row) => {
+    if (row) {
+      db.run(`UPDATE settings SET followUpDelay=?, emailTemplate=?, currency=?, smtpHost=?, smtpPort=?, smtpUser=?, smtpPass=? WHERE userId=?`, 
+        [followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass, req.user.id], 
+        function(err) {
+          if (err) return res.status(400).json({ error: err.message });
+          res.json({ success: true });
+      });
+    } else {
+      db.run(`INSERT INTO settings (userId, followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass) VALUES (?,?,?,?,?,?,?,?)`, 
+        [req.user.id, followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass], 
+        function(err) {
+          if (err) return res.status(400).json({ error: err.message });
+          res.json({ success: true });
+      });
+    }
   });
 });
 
-// Automation Engine (Runs every 10 seconds for demo purposes)
+// --- AUTOMATION ENGINE ---
 setInterval(() => {
-  db.get('SELECT * FROM settings LIMIT 1', [], (err, settings) => {
-    if (err || !settings) return;
+  // Loop through all users
+  db.all('SELECT * FROM users', [], (err, users) => {
+    if (err || !users) return;
+    
+    users.forEach(user => {
+      // Get settings for each user
+      db.get('SELECT * FROM settings WHERE userId = ?', [user.id], (err, settings) => {
+        if (err || !settings) return;
 
-    let transporter = null;
-    if (settings.smtpHost && settings.smtpUser && settings.smtpPass) {
-      transporter = nodemailer.createTransport({
-        host: settings.smtpHost,
-        port: settings.smtpPort,
-        secure: settings.smtpPort == 465,
-        auth: {
-          user: settings.smtpUser,
-          pass: settings.smtpPass
-        }
-      });
-    }
-
-    // 1. Increment days waiting
-    db.run(`UPDATE leads SET daysWaiting = daysWaiting + 1 WHERE status = 'Pending' AND autoFollowUp = 1`, function(err) {
-      if (err) console.error(err);
-      
-      // 2. Find leads
-      db.all(`SELECT * FROM leads WHERE status = 'Pending' AND autoFollowUp = 1 AND daysWaiting >= targetDays`, [], (err, rows) => {
-        if (err) return;
-        
-        rows.forEach(async lead => {
-          const templateToUse = (lead.customMessage && lead.customMessage.trim() !== '') ? lead.customMessage : settings.emailTemplate;
-          const finalMessage = templateToUse.replace(/{name}/g, lead.name);
-          
-          let emailSuccess = false;
-          let snippet = finalMessage.length > 25 ? finalMessage.substring(0, 25) + '...' : finalMessage;
-          let msg = `Simulated email to ${lead.name}: "${snippet}"`;
-
-          if (transporter) {
-            try {
-              await transporter.sendMail({
-                from: `"CatchUp Robot" <${settings.smtpUser}>`,
-                to: lead.email,
-                subject: 'Following up on our deal',
-                text: finalMessage
-              });
-              msg = `Real Email sent to ${lead.name}: "${snippet}"`;
-              emailSuccess = true;
-            } catch (err) {
-              msg = `Email failed for ${lead.name}: ${err.message}`;
-              emailSuccess = false;
+        let transporter = null;
+        if (settings.smtpHost && settings.smtpUser && settings.smtpPass) {
+          transporter = nodemailer.createTransport({
+            host: settings.smtpHost,
+            port: settings.smtpPort,
+            secure: settings.smtpPort == 465,
+            auth: {
+              user: settings.smtpUser,
+              pass: settings.smtpPass
             }
-          } else {
-            // Simulated success
-            emailSuccess = true;
-          }
+          });
+        }
+
+        // 1. Increment days waiting for this user's leads
+        db.run(`UPDATE leads SET daysWaiting = daysWaiting + 1 WHERE status = 'Pending' AND autoFollowUp = 1 AND userId = ?`, [user.id], function(err) {
+          if (err) return;
           
-          if (emailSuccess) {
-            db.run(`UPDATE leads SET status = 'Contacted' WHERE id = ?`, [lead.id], (err) => {
-              if (!err) {
-                db.run(`INSERT INTO activity_logs (message) VALUES (?)`, [msg]);
-                console.log('🤖 ' + msg);
+          // 2. Find leads for this user needing followup
+          db.all(`SELECT * FROM leads WHERE status = 'Pending' AND autoFollowUp = 1 AND daysWaiting >= targetDays AND userId = ?`, [user.id], (err, rows) => {
+            if (err) return;
+            
+            rows.forEach(async lead => {
+              const templateToUse = (lead.customMessage && lead.customMessage.trim() !== '') ? lead.customMessage : settings.emailTemplate;
+              const finalMessage = templateToUse.replace(/{name}/g, lead.name);
+              
+              let emailSuccess = false;
+              let snippet = finalMessage.length > 25 ? finalMessage.substring(0, 25) + '...' : finalMessage;
+              let msg = `Simulated email to ${lead.name}: "${snippet}"`;
+
+              if (transporter) {
+                try {
+                  await transporter.sendMail({
+                    from: `"${user.name}" <${settings.smtpUser}>`,
+                    to: lead.email,
+                    subject: 'Following up on our deal',
+                    text: finalMessage
+                  });
+                  msg = `Real Email sent to ${lead.name}: "${snippet}"`;
+                  emailSuccess = true;
+                } catch (err) {
+                  msg = `Email failed for ${lead.name}: ${err.message}`;
+                  emailSuccess = false;
+                }
+              } else {
+                // Simulated success
+                emailSuccess = true;
+              }
+              
+              if (emailSuccess) {
+                db.run(`UPDATE leads SET status = 'Contacted' WHERE id = ?`, [lead.id], (err) => {
+                  if (!err) {
+                    db.run(`INSERT INTO activity_logs (userId, message) VALUES (?, ?)`, [user.id, msg]);
+                    console.log(`[User ${user.id}] 🤖 ` + msg);
+                  }
+                });
+              } else {
+                db.run(`INSERT INTO activity_logs (userId, message) VALUES (?, ?)`, [user.id, msg]);
+                console.log(`[User ${user.id}] ❌ ` + msg);
               }
             });
-          } else {
-            // Just log the error, don't update status so it tries again next time
-            db.run(`INSERT INTO activity_logs (message) VALUES (?)`, [msg]);
-            console.log('❌ ' + msg);
-          }
+          });
         });
       });
     });
   });
-}, 10000);
+}, 10000); // 10 seconds for demo
 
 // For any other route, send the React index.html file
 app.use((req, res, next) => {
