@@ -1,11 +1,12 @@
 import React from 'react';
+import { LayoutDashboard, Users, CheckSquare, BarChart3, Settings, Zap } from 'lucide-react';
 
 const Sidebar = ({ theme, toggleTheme, currentView, setView }) => {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
         <div className="logo">
-          <span className="logo-icon">⚡</span>
+          <Zap className="logo-icon" size={28} color="var(--primary)" />
           <h2>CatchUp</h2>
         </div>
       </div>
@@ -14,27 +15,27 @@ const Sidebar = ({ theme, toggleTheme, currentView, setView }) => {
         <ul className="nav-links">
           <li>
             <a href="#" className={`nav-link ${currentView === 'dashboard' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setView('dashboard'); }}>
-              <span className="icon">🏠</span> Dashboard
+              <LayoutDashboard size={20} className="icon" /> Dashboard
             </a>
           </li>
           <li>
             <a href="#" className={`nav-link ${currentView === 'leads' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setView('leads'); }}>
-              <span className="icon">👥</span> Leads
+              <Users size={20} className="icon" /> Leads
             </a>
           </li>
           <li>
             <a href="#" className={`nav-link ${currentView === 'tasks' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setView('tasks'); }}>
-              <span className="icon">✓</span> Tasks
+              <CheckSquare size={20} className="icon" /> Tasks
             </a>
           </li>
           <li>
             <a href="#" className={`nav-link ${currentView === 'reports' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setView('reports'); }}>
-              <span className="icon">📈</span> Reports
+              <BarChart3 size={20} className="icon" /> Reports
             </a>
           </li>
           <li>
             <a href="#" className={`nav-link ${currentView === 'settings' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setView('settings'); }}>
-              <span className="icon">⚙️</span> Settings
+              <Settings size={20} className="icon" /> Settings
             </a>
           </li>
         </ul>
@@ -44,16 +45,6 @@ const Sidebar = ({ theme, toggleTheme, currentView, setView }) => {
         <button className="theme-toggle" onClick={toggleTheme}>
           {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
         </button>
-        <div className="sidebar-profile flex items-center gap-3">
-          <img src={`https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random&color=fff&rounded=true`} alt="Avatar" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.name || 'User'}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>SaaS User</div>
-          </div>
-          <button onClick={onLogout} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.2rem', padding: '4px' }} title="Log out">
-            🚪
-          </button>
-        </div>
       </div>
     </aside>
   );

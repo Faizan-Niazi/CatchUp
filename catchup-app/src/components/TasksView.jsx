@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-
 import { useToast } from './ToastContext';
+import { CheckCircle2, Circle, Trash2, Plus, Clock, Inbox } from 'lucide-react';
 
 const TasksView = ({ token }) => {
   const [tasks, setTasks] = useState([]);
@@ -54,45 +54,65 @@ const TasksView = ({ token }) => {
   };
 
   return (
-    <div className="glass-panel" style={{ maxWidth: '600px', margin: '0 auto', padding: '32px' }}>
-      <h2 style={{ marginBottom: '24px' }}>Manual Tasks</h2>
-      
-      <form onSubmit={addTask} style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
-        <input 
-          type="text" 
-          className="input-field" 
-          placeholder="e.g. Call John about the invoice..." 
-          value={newTaskText} 
-          onChange={e => setNewTaskText(e.target.value)} 
-          style={{ flex: 1 }}
-        />
-        <button type="submit" className="btn btn-primary">Add Task</button>
-      </form>
+    <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '8px' }}>Action Items</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>Track manual follow-ups and client commitments.</p>
+        </div>
+        <div style={{ background: 'var(--bg)', padding: '8px 16px', borderRadius: '50px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Clock size={16} /> {tasks.filter(t => !t.completed).length} Pending Tasks
+        </div>
+      </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {tasks.map(task => (
-          <div key={task.id} className="flex justify-between items-center" style={{ padding: '16px', background: 'var(--bg)', borderRadius: '12px', border: '1px solid var(--border)', opacity: task.completed ? 0.6 : 1 }}>
-            <div className="flex items-center gap-3">
-              <input 
-                type="checkbox" 
-                checked={task.completed} 
-                onChange={() => toggleTask(task.id, task.completed)}
-                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-              />
-              <span style={{ textDecoration: task.completed ? 'line-through' : 'none', fontSize: '1.05rem' }}>
-                {task.text}
-              </span>
+      <div className="dashboard-card" style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <Plus size={20} color="var(--primary)" />
+        <form onSubmit={addTask} style={{ flex: 1, display: 'flex' }}>
+          <input 
+            type="text" 
+            placeholder="What needs to be done?" 
+            value={newTaskText} 
+            onChange={e => setNewTaskText(e.target.value)} 
+            style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '1.05rem', padding: '12px 0', fontFamily: 'inherit', color: 'var(--text)' }}
+          />
+          <button type="submit" style={{ display: 'none' }}>Add</button>
+        </form>
+      </div>
+
+      <div className="dashboard-card" style={{ padding: 0, overflow: 'hidden' }}>
+        {tasks.length === 0 ? (
+          <div style={{ padding: '64px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+            <div style={{ background: 'var(--bg)', padding: '24px', borderRadius: '50%' }}>
+              <Inbox size={48} color="var(--text-muted)" opacity={0.5} />
             </div>
-            <button 
-              onClick={() => deleteTask(task.id)}
-              style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.2rem' }}
-            >
-              ✕
-            </button>
+            <div>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '8px' }}>All caught up!</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>You have no pending tasks. Enjoy your day.</p>
+            </div>
           </div>
-        ))}
-        {tasks.length === 0 && (
-          <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No pending tasks. You're all caught up!</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {tasks.map((task, index) => (
+              <div key={task.id} style={{ padding: '20px 24px', borderBottom: index < tasks.length - 1 ? '1px solid var(--border)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'background 0.2s', background: task.completed ? 'var(--bg)' : 'var(--surface)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
+                  <button onClick={() => toggleTask(task.id, task.completed)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: task.completed ? 'var(--primary)' : 'var(--text-muted)' }}>
+                    {task.completed ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+                  </button>
+                  <span style={{ fontSize: '1.05rem', color: task.completed ? 'var(--text-muted)' : 'var(--text)', textDecoration: task.completed ? 'line-through' : 'none', fontWeight: task.completed ? 400 : 500, transition: 'all 0.2s' }}>
+                    {task.text}
+                  </span>
+                </div>
+                <button 
+                  onClick={() => deleteTask(task.id)}
+                  style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '8px', opacity: 0.5, transition: 'opacity 0.2s' }}
+                  onMouseOver={e => e.currentTarget.style.opacity = 1}
+                  onMouseOut={e => e.currentTarget.style.opacity = 0.5}
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

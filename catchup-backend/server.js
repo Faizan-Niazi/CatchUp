@@ -111,7 +111,8 @@ app.put('/api/leads/:id', authenticateToken, (req, res) => {
     if (err || !row) return res.status(404).json({ error: 'Lead not found or unauthorized' });
 
     if (status !== undefined && name === undefined) {
-      db.run(`UPDATE leads SET status = ? WHERE id = ?`, [status, leadId], function(err) {
+      const recoveredSql = status === 'Recovered' ? ', recoveredAt = CURRENT_TIMESTAMP' : '';
+      db.run(`UPDATE leads SET status = ?${recoveredSql} WHERE id = ?`, [status, leadId], function(err) {
         if (err) return res.status(400).json({ error: err.message });
         res.json({ message: 'Updated', changes: this.changes });
       });
@@ -144,29 +145,34 @@ app.post('/api/payment-link/:id', authenticateToken, (req, res) => {
   db.get(`SELECT * FROM leads WHERE id = ? AND userId = ?`, [leadId, req.user.id], async (err, lead) => {
     if (err || !lead) return res.status(404).json({ error: 'Lead not found' });
     
-    try {
-      if (!process.env.STRIPE_SECRET_KEY) {
-        return res.json({ url: `https://checkout.stripe.com/pay/cs_test_mock_${lead.id}?amount=${lead.value}` });
+    db.get('SELECT stripeSecretKey FROM settings WHERE userId = ?', [req.user.id], async (err, settings) => {
+      try {
+        const secretKey = (settings && settings.stripeSecretKey) ? settings.stripeSecretKey : process.env.STRIPE_SECRET_KEY;
+        if (!secretKey) {
+          return res.json({ url: `https://checkout.stripe.com/pay/cs_test_mock_${lead.id}?amount=${lead.value}` });
+        }
+        
+        const customStripe = require('stripe')(secretKey);
+        
+        const session = await customStripe.checkout.sessions.create({
+          payment_method_types: ['card'],
+          line_items: [{
+            price_data: {
+              currency: 'usd',
+              product_data: { name: `Payment for ${lead.projectName || 'Services'} - ${lead.name}` },
+              unit_amount: Math.round(lead.value * 100),
+            },
+            quantity: 1,
+          }],
+          mode: 'payment',
+          success_url: `${req.headers.origin}?payment=success`,
+          cancel_url: `${req.headers.origin}?payment=cancel`,
+        });
+        res.json({ url: session.url });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
       }
-      
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [{
-          price_data: {
-            currency: 'usd',
-            product_data: { name: `Payment for ${lead.projectName || 'Services'} - ${lead.name}` },
-            unit_amount: Math.round(lead.value * 100),
-          },
-          quantity: 1,
-        }],
-        mode: 'payment',
-        success_url: `${req.headers.origin}?payment=success`,
-        cancel_url: `${req.headers.origin}?payment=cancel`,
-      });
-      res.json({ url: session.url });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+    });
   });
 });
 
@@ -211,29 +217,65 @@ app.get('/api/logs', authenticateToken, (req, res) => {
   });
 });
 
+// --- ANALYTICS API ---
+
+app.get('/api/analytics', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  
+  db.all('SELECT * FROM leads WHERE userId = ?', [userId], (err, leads) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    const totalRecovered = leads.filter(l => l.status === 'Recovered').reduce((acc, l) => acc + l.value, 0);
+    
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentRecovered = leads.filter(l => l.status === 'Recovered' && l.recoveredAt && new Date(l.recoveredAt) >= sevenDaysAgo).reduce((acc, l) => acc + l.value, 0);
+    
+    const activeClients = leads.filter(l => l.status !== 'Recovered').length;
+    
+    const pendingValue = leads.filter(l => l.status === 'Pending').reduce((acc, l) => acc + l.value, 0);
+    const forecastPayout = Math.round(pendingValue * 0.2);
+    const forecastDeals = Math.round(leads.filter(l => l.status === 'Pending').length * 0.2);
+    
+    const totalRecoveredDeals = leads.filter(l => l.status === 'Recovered').length;
+    const autoRecoveredDeals = leads.filter(l => l.status === 'Recovered' && l.autoFollowUp === 1).length;
+    
+    res.json({
+      totalRecovered,
+      recentRecovered,
+      activeClients,
+      forecastPayout,
+      forecastDeals,
+      totalRecoveredDeals,
+      autoRecoveredDeals,
+      totalLeads: leads.length
+    });
+  });
+});
+
 // --- SETTINGS API ---
 
 app.get('/api/settings', authenticateToken, (req, res) => {
   db.get('SELECT * FROM settings WHERE userId = ? LIMIT 1', [req.user.id], (err, row) => {
     if (err) return res.status(400).json({ error: err.message });
-    res.json(row || { followUpDelay: 4, emailTemplate: '', currency: '$', smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '' });
+    res.json(row || { followUpDelay: 4, emailTemplate: '', currency: '$', smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '', stripeSecretKey: '' });
   });
 });
 
 app.post('/api/settings', authenticateToken, (req, res) => {
-  const { followUpDelay, emailTemplate, currency = '$', smtpHost = '', smtpPort = 587, smtpUser = '', smtpPass = '' } = req.body;
+  const { followUpDelay, emailTemplate, currency = '$', smtpHost = '', smtpPort = 587, smtpUser = '', smtpPass = '', stripeSecretKey = '' } = req.body;
   
   db.get('SELECT id FROM settings WHERE userId = ?', [req.user.id], (err, row) => {
     if (row) {
-      db.run(`UPDATE settings SET followUpDelay=?, emailTemplate=?, currency=?, smtpHost=?, smtpPort=?, smtpUser=?, smtpPass=? WHERE userId=?`, 
-        [followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass, req.user.id], 
+      db.run(`UPDATE settings SET followUpDelay=?, emailTemplate=?, currency=?, smtpHost=?, smtpPort=?, smtpUser=?, smtpPass=?, stripeSecretKey=? WHERE userId=?`, 
+        [followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass, stripeSecretKey, req.user.id], 
         function(err) {
           if (err) return res.status(400).json({ error: err.message });
           res.json({ success: true });
       });
     } else {
-      db.run(`INSERT INTO settings (userId, followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass) VALUES (?,?,?,?,?,?,?,?)`, 
-        [req.user.id, followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass], 
+      db.run(`INSERT INTO settings (userId, followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass, stripeSecretKey) VALUES (?,?,?,?,?,?,?,?,?)`, 
+        [req.user.id, followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass, stripeSecretKey], 
         function(err) {
           if (err) return res.status(400).json({ error: err.message });
           res.json({ success: true });

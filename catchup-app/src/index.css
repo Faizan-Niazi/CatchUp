@@ -1,29 +1,19 @@
 :root {
-  --bg: #f8fafc;
-  --text: #0f172a;
-  --text-muted: #64748b;
-  --primary: #8b5cf6;
-  --primary-glow: rgba(139, 92, 246, 0.25);
+  --bg: #F4F6FC;
+  --text: #000000;
+  --text-muted: #6D7588;
+  --primary: #1C9A59;
+  --primary-glow: rgba(28, 154, 89, 0.25);
   --secondary: #0ea5e9;
-  --surface: rgba(255, 255, 255, 0.8);
+  --surface: #FFFFFF;
   --border: rgba(0, 0, 0, 0.08);
-  --glass-blur: blur(16px);
-  --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+  --glass-blur: blur(0px);
+  --card-shadow: 0 4px 20px rgba(0,0,0,0.03);
   --danger: #ef4444;
   --success: #10b981;
 }
 
-[data-theme="dark"] {
-  --bg: #030712;
-  --text: #f8fafc;
-  --text-muted: #94a3b8;
-  --primary: #a78bfa;
-  --primary-glow: rgba(167, 139, 250, 0.25);
-  --secondary: #38bdf8;
-  --surface: rgba(17, 24, 39, 0.5);
-  --border: rgba(255, 255, 255, 0.08);
-  --card-shadow: 0 8px 30px rgba(0,0,0,0.4);
-}
+
 
 * {
   box-sizing: border-box;
@@ -31,21 +21,19 @@
 
 body {
   margin: 0;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Inter', sans-serif;
   background-color: var(--bg);
   color: var(--text);
   transition: background-color 0.4s ease, color 0.4s ease;
   min-height: 100vh;
 }
 
-/* Glassmorphism Panel */
+/* Card Panel */
 .glass-panel {
   background: var(--surface);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--border);
   box-shadow: var(--card-shadow);
-  border-radius: 20px;
+  border-radius: 12px;
 }
 
 /* Buttons */

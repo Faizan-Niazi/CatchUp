@@ -15,7 +15,18 @@ const LeadTable = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, 
 
   return (
     <div className="glass-panel" style={{ overflow: 'hidden' }}>
-      <table>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Leads & Contacts</h3>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button style={{ padding: '6px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text)' }}>
+            <span>⇅</span> Sort
+          </button>
+          <button style={{ padding: '6px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text)' }}>
+            <span>⧨</span> Filter
+          </button>
+        </div>
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: 'var(--surface)' }}>
         <thead>
           <tr>
             <th style={{ width: '40px' }}></th>
