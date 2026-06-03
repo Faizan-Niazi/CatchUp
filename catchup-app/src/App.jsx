@@ -10,6 +10,7 @@ import LeadsView from './components/LeadsView';
 import TasksView from './components/TasksView';
 import ReportsView from './components/ReportsView';
 import AuthView from './components/AuthView';
+import LandingPageView from './components/LandingPageView';
 import { useToast } from './components/ToastContext';
 import { Search, Bell, LogOut, Plus, DollarSign, TrendingUp, Users, Target, CheckCircle, Activity, Box, ChevronDown } from 'lucide-react';
 import './App.css';
@@ -18,6 +19,7 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
   
+  const [showAuth, setShowAuth] = useState(false);
   const [theme, setTheme] = useState('light');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState(null);
@@ -135,7 +137,7 @@ function App() {
     fetch(`/api/leads/${id}`, { method: 'PUT', headers: authHeaders, body: JSON.stringify({ status: 'Recovered' }) })
       .then(() => {
         setLeads(leads.map(l => l.id === id ? { ...l, status: 'Recovered' } : l));
-        addToast('Marked as Paid! 🎉', 'success');
+        addToast('Marked as Paid!', 'success');
       }).catch(() => addToast('Action failed', 'error'));
   };
 
@@ -178,7 +180,11 @@ function App() {
   }
 
   if (!token) {
-    return <AuthView onAuthSuccess={handleAuthSuccess} />;
+    if (showAuth) {
+      return <AuthView onAuthSuccess={handleAuthSuccess} onBack={() => setShowAuth(false)} />;
+    } else {
+      return <LandingPageView onLoginClick={() => setShowAuth(true)} />;
+    }
   }
 
   const totalLost = leads.filter(l => l.status === 'Pending').reduce((sum, l) => sum + l.value, 0);

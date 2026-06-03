@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useToast } from './ToastContext';
+import { Zap, ArrowLeft } from 'lucide-react';
 
-const AuthView = ({ onAuthSuccess }) => {
+const AuthView = ({ onAuthSuccess, onBack }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -35,10 +36,23 @@ const AuthView = ({ onAuthSuccess }) => {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', padding: '24px' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', padding: '24px', position: 'relative' }}>
+      
+      {onBack && (
+        <button 
+          onClick={onBack}
+          style={{ position: 'absolute', top: '32px', left: '32px', display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 600 }}
+        >
+          <ArrowLeft size={18} /> Back to Home
+        </button>
+      )}
+
       <div className="glass-panel" style={{ maxWidth: '400px', width: '100%', padding: '32px' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>CatchUp 🚀</h1>
+          <div className="logo" style={{ justifyContent: 'center', marginBottom: '16px' }}>
+            <Zap className="logo-icon" size={40} color="var(--primary)" strokeWidth={3} />
+            <h1 style={{ fontSize: '2.5rem' }}>CatchUp</h1>
+          </div>
           <p style={{ color: 'var(--text-muted)' }}>{isLogin ? 'Sign in to your dashboard' : 'Create your free account'}</p>
         </div>
         

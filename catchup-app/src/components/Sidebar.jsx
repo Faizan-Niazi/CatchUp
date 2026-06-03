@@ -1,12 +1,12 @@
 import React from 'react';
-import { LayoutDashboard, Users, CheckSquare, BarChart3, Settings, Zap } from 'lucide-react';
+import { LayoutDashboard, Users, CheckSquare, BarChart3, Settings, Zap, Sun, Moon } from 'lucide-react';
 
 const Sidebar = ({ theme, toggleTheme, currentView, setView }) => {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
         <div className="logo">
-          <Zap className="logo-icon" size={28} color="var(--primary)" />
+          <Zap className="logo-icon" size={32} color="var(--primary)" strokeWidth={3} />
           <h2>CatchUp</h2>
         </div>
       </div>
@@ -42,8 +42,8 @@ const Sidebar = ({ theme, toggleTheme, currentView, setView }) => {
       </nav>
 
       <div className="sidebar-footer">
-        <button className="theme-toggle" onClick={toggleTheme}>
-          {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+        <button className="theme-toggle" onClick={toggleTheme} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          {theme === 'dark' ? <><Sun size={18} /> Light Mode</> : <><Moon size={18} /> Dark Mode</>}
         </button>
       </div>
     </aside>
