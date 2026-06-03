@@ -50,7 +50,7 @@ const LandingPageView = ({ onLoginClick }) => {
       </nav>
 
       {/* Hero Section */}
-      <main style={{ 
+      <main id="product" style={{ 
         maxWidth: '1280px', 
         margin: '0 auto', 
         padding: '80px 48px 60px',
