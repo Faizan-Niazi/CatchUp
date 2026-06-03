@@ -13,7 +13,14 @@
   --success: #10b981;
 }
 
-
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --surface: #1e293b;
+  --border: rgba(255, 255, 255, 0.1);
+  --card-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
 
 * {
   box-sizing: border-box;
