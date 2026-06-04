@@ -12,7 +12,7 @@ const LandingPageView = ({ onLoginClick }) => {
     }}>
       
       {/* Navbar */}
-      <nav style={{ 
+      <nav className="landing-nav" style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
@@ -50,7 +50,7 @@ const LandingPageView = ({ onLoginClick }) => {
       </nav>
 
       {/* Hero Section */}
-      <main id="product" style={{ 
+      <main id="product" className="landing-main" style={{ 
         maxWidth: '1280px', 
         margin: '0 auto', 
         padding: '80px 48px 60px',
@@ -74,7 +74,7 @@ const LandingPageView = ({ onLoginClick }) => {
           filter: 'blur(60px)'
         }}></div>
 
-        <h1 style={{ 
+        <h1 className="hero-title" style={{ 
           fontSize: '4.5rem', 
           fontWeight: 800, 
           lineHeight: 1.1, 
@@ -86,7 +86,7 @@ const LandingPageView = ({ onLoginClick }) => {
           Never let a pending deal <br/> slip through the cracks.
         </h1>
         
-        <p style={{ 
+        <p className="hero-subtitle" style={{ 
           fontSize: '1.2rem', 
           color: 'var(--text-muted)', 
           maxWidth: '600px',
@@ -154,7 +154,7 @@ const LandingPageView = ({ onLoginClick }) => {
         </div>
 
         {/* CSS Dashboard Mockup */}
-        <div style={{ position: 'relative', width: '100%', maxWidth: '1000px', height: '400px', marginTop: '20px' }}>
+        <div className="mockup-container" style={{ position: 'relative', width: '100%', maxWidth: '1000px', height: '400px', marginTop: '20px' }}>
           <div style={{ 
             position: 'absolute', 
             top: '40px', 
@@ -312,7 +312,7 @@ const LandingPageView = ({ onLoginClick }) => {
       </section>
 
       {/* Outcomes & Features Section */}
-      <section id="features" style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 48px 120px' }}>
+      <section id="features" className="landing-section" style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 48px 120px' }}>
         <div style={{ textAlign: 'center', marginBottom: '80px' }}>
           <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '16px' }}>Work smarter, not harder.</h2>
           <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto' }}>
@@ -357,7 +357,7 @@ const LandingPageView = ({ onLoginClick }) => {
       </section>
 
       {/* Outcomes Metrics Banner */}
-      <section id="outcomes" style={{ background: 'linear-gradient(135deg, #064e3b 0%, #1C9A59 100%)', color: 'var(--bg)', padding: '80px 0' }}>
+      <section id="outcomes" className="landing-section" style={{ background: 'linear-gradient(135deg, #064e3b 0%, #1C9A59 100%)', color: 'var(--bg)', padding: '80px 0' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 48px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '48px', textAlign: 'center' }}>
           <div>
             <div style={{ fontSize: '3.5rem', fontWeight: 800, marginBottom: '8px' }}>$2M+</div>
@@ -379,7 +379,7 @@ const LandingPageView = ({ onLoginClick }) => {
       </section>
 
       {/* Reviews Section */}
-      <section id="reviews" style={{ maxWidth: '1280px', margin: '0 auto', padding: '120px 48px' }}>
+      <section id="reviews" className="landing-section" style={{ maxWidth: '1280px', margin: '0 auto', padding: '120px 48px' }}>
         <div style={{ textAlign: 'center', marginBottom: '80px' }}>
           <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '16px' }}>Loved by freelancers</h2>
           <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto' }}>
@@ -411,7 +411,7 @@ const LandingPageView = ({ onLoginClick }) => {
       </section>
 
       {/* Footer CTA */}
-      <footer style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: '80px 48px', textAlign: 'center' }}>
+      <footer className="landing-section" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: '80px 48px', textAlign: 'center' }}>
         <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '24px' }}>Ready to get paid faster?</h2>
         <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: '40px' }}>Join hundreds of professionals using CatchUp for free.</p>
         <button 
@@ -429,6 +429,12 @@ const LandingPageView = ({ onLoginClick }) => {
         .btn-hover-scale:hover { transform: translateY(-2px); }
         @media (max-width: 768px) {
           .nav-links-desktop { display: none !important; }
+          .hero-title { font-size: 2.8rem !important; }
+          .hero-subtitle { font-size: 1rem !important; }
+          .mockup-container { display: none !important; }
+          .landing-nav { padding: 16px 24px !important; }
+          .landing-main { padding: 40px 24px 20px !important; }
+          .landing-section { padding-left: 24px !important; padding-right: 24px !important; }
         }
         @keyframes float {
           0% { transform: translateY(0px); }

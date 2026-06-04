@@ -10,7 +10,7 @@ const MetricCard = ({ title, value, highlight, icon: Icon, trend = "+12%" }) => 
         {title}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div style={{ fontSize: '2.2rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>
+        <div className="mobile-text-xl" style={{ fontSize: '2.2rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>
           {value}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(28, 154, 89, 0.1)', color: 'var(--primary)', padding: '4px 10px', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 700 }}>

@@ -27,7 +27,8 @@ const LeadTable = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, 
           </button>
         </div>
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: 'var(--surface)' }}>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: 'var(--surface)', minWidth: '800px' }}>
         <thead>
           <tr>
             <th style={{ width: '40px' }}></th>
@@ -43,25 +44,23 @@ const LeadTable = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, 
           {leads.map((lead) => (
             <React.Fragment key={lead.id}>
               <tr style={{ cursor: 'pointer' }} onClick={() => toggleRow(lead.id)}>
-                <td style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                <td style={{ textAlign: 'center', color: 'var(--text-muted)' }} className="mobile-hide">
                   <div className={`chevron ${expandedRows.has(lead.id) ? 'expanded' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <ChevronRight size={18} />
                   </div>
                 </td>
-                <td>
+                <td data-label="Client Name">
                   <div className="flex items-center gap-3">
-                    <img 
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(lead.name)}&background=random&color=fff&rounded=true&size=40`} 
-                      alt={lead.name} 
-                      style={{ width: '40px', height: '40px', borderRadius: '50%' }}
-                    />
+                    <div style={{ width: '32px', height: '32px', minWidth: '32px', flexShrink: 0, borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                      {lead.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                    </div>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--text)' }}>{lead.name}</div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '2px' }}>{lead.projectName || 'Project'}</div>
                     </div>
                   </div>
                 </td>
-                <td>
+                <td data-label="Status">
                   <span style={{ 
                     padding: '4px 10px', 
                     borderRadius: '50px', 
@@ -73,13 +72,13 @@ const LeadTable = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, 
                     {lead.status}
                   </span>
                 </td>
-                <td style={{ fontWeight: 600, color: lead.status === 'Recovered' ? 'var(--text-muted)' : 'var(--text)' }}>
+                <td data-label="Value" style={{ fontWeight: 600, color: lead.status === 'Recovered' ? 'var(--text-muted)' : 'var(--text)' }}>
                   {currency}{lead.value.toLocaleString()}
                 </td>
-                <td style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                <td data-label="Wait Time" style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                   <span style={{ fontWeight: 600, color: lead.daysWaiting >= lead.targetDays ? 'var(--danger)' : 'inherit' }}>{lead.daysWaiting}</span> / {lead.targetDays || 4} days
                 </td>
-                <td onClick={(e) => e.stopPropagation()}>
+                <td data-label="Auto-Pilot" onClick={(e) => e.stopPropagation()}>
                   <label className="toggle-switch" title="Auto-send emails via SMTP">
                     <input
                       type="checkbox"
@@ -89,8 +88,8 @@ const LeadTable = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, 
                     <span className="slider"></span>
                   </label>
                 </td>
-                <td onClick={(e) => e.stopPropagation()} style={{ textAlign: 'right' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                <td data-label="Actions" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'right' }}>
+                  <div className="mobile-actions-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
                     {lead.status !== 'Recovered' && (
                       <button 
                         onClick={(e) => { e.stopPropagation(); markAsPaid(lead.id); }}
@@ -164,7 +163,8 @@ const LeadTable = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, 
             </tr>
           )}
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   );
 };

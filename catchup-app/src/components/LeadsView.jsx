@@ -13,12 +13,12 @@ const LeadsView = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, 
 
   return (
     <div className="dashboard-card" style={{ padding: 0, overflow: 'hidden' }}>
-      <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)' }}>
+      <div className="leads-header-row" style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)' }}>
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '4px' }}>Leads Database</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Manage your entire pipeline and customer contacts.</p>
         </div>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <div className="leads-actions-row" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', background: 'var(--bg)', padding: '10px 16px', borderRadius: '8px', width: '300px', border: '1px solid var(--border)' }}>
             <Search size={18} /> 
             <input 

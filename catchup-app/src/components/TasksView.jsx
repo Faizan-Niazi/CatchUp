@@ -55,7 +55,7 @@ const TasksView = ({ token }) => {
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <div className="tasks-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '8px' }}>Action Items</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>Track manual follow-ups and client commitments.</p>

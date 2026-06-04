@@ -49,6 +49,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     db.run(`ALTER TABLE leads ADD COLUMN createdAt DATETIME DEFAULT CURRENT_TIMESTAMP`, () => {});
     db.run(`ALTER TABLE leads ADD COLUMN recoveredAt DATETIME`, () => {});
     db.run(`ALTER TABLE settings ADD COLUMN stripeSecretKey TEXT DEFAULT ''`, () => {});
+    db.run(`ALTER TABLE settings ADD COLUMN stripeWebhookSecret TEXT DEFAULT ''`, () => {});
 
     db.run(`CREATE TABLE IF NOT EXISTS activity_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

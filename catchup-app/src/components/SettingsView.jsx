@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Settings2, Mail, Server, Save, DollarSign } from 'lucide-react';
+import { Settings2, Mail, Server, Save, DollarSign, User } from 'lucide-react';
+import { useToast } from './ToastContext';
 
-const SettingsView = ({ currentSettings, onSettingsSaved, token }) => {
+const SettingsView = ({ currentSettings, onSettingsSaved, token, user, onProfileUpdated }) => {
   const [currency, setCurrency] = useState(currentSettings.currency || '$');
   const [followUpDelay, setFollowUpDelay] = useState(currentSettings.followUpDelay || 4);
   const [emailTemplate, setEmailTemplate] = useState(currentSettings.emailTemplate || '');
@@ -10,27 +11,64 @@ const SettingsView = ({ currentSettings, onSettingsSaved, token }) => {
   const [smtpUser, setSmtpUser] = useState(currentSettings.smtpUser || '');
   const [smtpPass, setSmtpPass] = useState(currentSettings.smtpPass || '');
   const [stripeSecretKey, setStripeSecretKey] = useState(currentSettings.stripeSecretKey || '');
+  const [stripeWebhookSecret, setStripeWebhookSecret] = useState(currentSettings.stripeWebhookSecret || '');
+  
+  const [profileName, setProfileName] = useState(user?.name || '');
+  const [profileEmail, setProfileEmail] = useState(user?.email || '');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  
+  const { addToast } = useToast();
   
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('profile');
 
   const authHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 
   const handleSave = () => {
     setSaving(true);
-    fetch('/api/settings', {
-      method: 'POST',
-      headers: authHeaders,
-      body: JSON.stringify({ currency, followUpDelay: parseInt(followUpDelay), emailTemplate, smtpHost, smtpPort: parseInt(smtpPort), smtpUser, smtpPass, stripeSecretKey })
-    })
-      .then(res => res.json())
+    
+    const promises = [];
+
+    // Save general settings
+    promises.push(
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ currency, followUpDelay: parseInt(followUpDelay), emailTemplate, smtpHost, smtpPort: parseInt(smtpPort), smtpUser, smtpPass, stripeSecretKey, stripeWebhookSecret })
+      }).then(res => res.json())
+    );
+
+    // Save profile settings if changed
+    if (profileName !== user?.name || profileEmail !== user?.email || newPassword) {
+      promises.push(
+        fetch('/api/profile', {
+          method: 'PUT',
+          headers: authHeaders,
+          body: JSON.stringify({ name: profileName, email: profileEmail, currentPassword, newPassword })
+        }).then(async res => {
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+          if (onProfileUpdated) onProfileUpdated(data.token, data.user);
+        })
+      );
+    }
+
+    Promise.all(promises)
       .then(() => {
         setSaving(false);
+        setCurrentPassword('');
+        setNewPassword('');
         if (onSettingsSaved) onSettingsSaved();
+      })
+      .catch((err) => {
+        setSaving(false);
+        addToast(err.message, 'error');
       });
   };
 
   const tabs = [
+    { id: 'profile', label: 'User Profile', icon: User },
     { id: 'general', label: 'General Preferences', icon: Settings2 },
     { id: 'email', label: 'Email Templates', icon: Mail },
     { id: 'payments', label: 'Payments Integration', icon: DollarSign },
@@ -38,20 +76,14 @@ const SettingsView = ({ currentSettings, onSettingsSaved, token }) => {
   ];
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', paddingBottom: '64px' }}>
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
-        <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '8px' }}>Workspace Settings</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>Manage your preferences and integrations.</p>
-        </div>
-        <button className="btn btn-primary" onClick={handleSave} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 24px', borderRadius: '8px', fontWeight: 600 }} disabled={saving}>
-          <Save size={18} /> {saving ? 'Saving...' : 'Save Changes'}
-        </button>
+    <div style={{ paddingBottom: '64px', width: '100%' }}>
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '8px' }}>Workspace Settings</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>Manage your preferences and integrations.</p>
       </div>
 
-      <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
-        <div style={{ width: '240px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <div className="settings-layout" style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
+        <div className="settings-tabs" style={{ width: '240px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {tabs.map(tab => (
             <button 
               key={tab.id}
@@ -72,6 +104,39 @@ const SettingsView = ({ currentSettings, onSettingsSaved, token }) => {
         </div>
 
         <div className="dashboard-card" style={{ flex: 1, padding: '32px', minHeight: '400px' }}>
+          {activeTab === 'profile' && (
+            <div className="fade-in">
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>User Profile</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>Display Name</label>
+                  <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', outline: 'none', color: 'var(--text)', fontSize: '1rem', fontFamily: 'inherit', width: '100%' }} />
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>Email Address</label>
+                  <input type="email" value={profileEmail} onChange={e => setProfileEmail(e.target.value)} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', outline: 'none', color: 'var(--text)', fontSize: '1rem', fontFamily: 'inherit', width: '100%' }} />
+                </div>
+
+                <div style={{ marginTop: '16px' }}>
+                  <h4 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '24px', color: 'var(--text)', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>Security Settings</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>Current Password</label>
+                      <input type="password" placeholder="Required to change password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', outline: 'none', color: 'var(--text)', fontSize: '1rem', fontFamily: 'inherit', width: '100%' }} />
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>New Password</label>
+                      <input type="password" placeholder="Leave blank to keep current password" value={newPassword} onChange={e => setNewPassword(e.target.value)} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', outline: 'none', color: 'var(--text)', fontSize: '1rem', fontFamily: 'inherit', width: '100%' }} />
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
           {activeTab === 'general' && (
             <div className="fade-in">
               <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>General Preferences</h3>
@@ -105,10 +170,26 @@ const SettingsView = ({ currentSettings, onSettingsSaved, token }) => {
             <div className="fade-in">
               <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>Payments Integration</h3>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>Connect your Stripe account to generate real payment links for recovered deals.</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>Stripe Secret Key</label>
-                <input type="password" placeholder="sk_test_..." value={stripeSecretKey} onChange={e => setStripeSecretKey(e.target.value)} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', outline: 'none', color: 'var(--text)', fontSize: '1rem', fontFamily: 'inherit', width: '100%' }} />
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>We securely store this key to create Checkout Sessions on your behalf.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>Stripe Secret Key</label>
+                  <input type="password" placeholder="sk_test_..." value={stripeSecretKey} onChange={e => setStripeSecretKey(e.target.value)} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', outline: 'none', color: 'var(--text)', fontSize: '1rem', fontFamily: 'inherit', width: '100%' }} />
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>We securely store this key to create Checkout Sessions on your behalf.</p>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>Your Webhook URL</label>
+                  <div style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontSize: '0.9rem', fontFamily: 'monospace', userSelect: 'all' }}>
+                    {window.location.origin}/api/webhooks/stripe/{user?.id}
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Copy this URL and add it as a new Webhook in your Stripe Dashboard. Listen for the <code style={{background: 'var(--bg)', padding: '2px 4px', borderRadius: '4px'}}>checkout.session.completed</code> event.</p>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>Stripe Webhook Secret</label>
+                  <input type="password" placeholder="whsec_..." value={stripeWebhookSecret} onChange={e => setStripeWebhookSecret(e.target.value)} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', outline: 'none', color: 'var(--text)', fontSize: '1rem', fontFamily: 'inherit', width: '100%' }} />
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Paste the Webhook Secret provided by Stripe here so we can securely verify incoming payment events.</p>
+                </div>
               </div>
             </div>
           )}
@@ -117,7 +198,7 @@ const SettingsView = ({ currentSettings, onSettingsSaved, token }) => {
             <div className="fade-in">
               <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>SMTP Configuration</h3>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>Configure these to send actual emails. Leave blank to run the engine in simulation mode.</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+              <div className="settings-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>SMTP Host</label>
                   <input type="text" placeholder="e.g. smtp.gmail.com" value={smtpHost} onChange={e => setSmtpHost(e.target.value)} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', outline: 'none', color: 'var(--text)', fontSize: '1rem', fontFamily: 'inherit' }} />
@@ -138,6 +219,12 @@ const SettingsView = ({ currentSettings, onSettingsSaved, token }) => {
             </div>
           )}
         </div>
+      </div>
+      
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+        <button className="btn btn-primary" onClick={handleSave} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 32px', borderRadius: '8px', fontWeight: 600, fontSize: '1.05rem', width: '100%', justifyContent: 'center' }} disabled={saving}>
+          <Save size={20} /> {saving ? 'Saving...' : 'Save Changes'}
+        </button>
       </div>
     </div>
   );

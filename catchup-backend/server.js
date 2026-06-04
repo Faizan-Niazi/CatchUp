@@ -9,6 +9,45 @@ const path = require('path');
 
 const app = express();
 app.use(cors());
+
+// --- STRIPE WEBHOOK ---
+// Must be defined before express.json() to capture raw body for signature verification
+app.post('/api/webhooks/stripe/:userId', express.raw({ type: 'application/json' }), (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const userId = req.params.userId;
+
+  if (!userId) return res.status(400).send('Missing user ID');
+
+  db.get('SELECT stripeWebhookSecret FROM settings WHERE userId = ?', [userId], (err, settings) => {
+    if (err || !settings || !settings.stripeWebhookSecret) {
+      console.error(`Webhook error: No webhook secret found for user ${userId}`);
+      return res.status(400).send('Webhook secret not configured');
+    }
+
+    try {
+      const event = require('stripe').webhooks.constructEvent(req.body, sig, settings.stripeWebhookSecret);
+      
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        const leadId = session.metadata?.leadId;
+
+        if (leadId) {
+          db.run(`UPDATE leads SET status = 'Paid', recoveredAt = CURRENT_TIMESTAMP WHERE id = ? AND userId = ?`, [leadId, userId], (err) => {
+            if (!err) {
+              db.run(`INSERT INTO activity_logs (userId, message) VALUES (?, ?)`, [userId, `Payment automatically processed via Stripe for Lead #${leadId}`]);
+            }
+          });
+        }
+      }
+
+      res.json({received: true});
+    } catch (err) {
+      console.error('Webhook signature verification failed:', err.message);
+      res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+  });
+});
+
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
@@ -72,6 +111,35 @@ app.get('/api/me', authenticateToken, (req, res) => {
   db.get(`SELECT id, name, email FROM users WHERE id = ?`, [req.user.id], (err, user) => {
     if (err || !user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
+  });
+});
+
+app.put('/api/profile', authenticateToken, (req, res) => {
+  const { name, email, currentPassword, newPassword } = req.body;
+  if (!name || !email) return res.status(400).json({ error: 'Name and email are required' });
+
+  db.get(`SELECT * FROM users WHERE id = ?`, [req.user.id], async (err, user) => {
+    if (err || !user) return res.status(404).json({ error: 'User not found' });
+
+    let finalPassword = user.password;
+    
+    if (newPassword) {
+      if (!currentPassword) return res.status(400).json({ error: 'Current password is required to change your password' });
+      const validPassword = await bcrypt.compare(currentPassword, user.password);
+      if (!validPassword) return res.status(400).json({ error: 'Incorrect current password' });
+      finalPassword = await bcrypt.hash(newPassword, 10);
+    }
+
+    db.get(`SELECT id FROM users WHERE email = ? AND id != ?`, [email, req.user.id], (err, existing) => {
+      if (existing) return res.status(400).json({ error: 'Email is already in use' });
+
+      db.run(`UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?`, [name, email, finalPassword, req.user.id], function(err) {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        
+        const token = jwt.sign({ id: req.user.id, email }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ token, user: { id: req.user.id, name, email } });
+      });
+    });
   });
 });
 
@@ -156,6 +224,7 @@ app.post('/api/payment-link/:id', authenticateToken, (req, res) => {
         
         const session = await customStripe.checkout.sessions.create({
           payment_method_types: ['card'],
+          metadata: { leadId: lead.id },
           line_items: [{
             price_data: {
               currency: 'usd',
@@ -258,24 +327,24 @@ app.get('/api/analytics', authenticateToken, (req, res) => {
 app.get('/api/settings', authenticateToken, (req, res) => {
   db.get('SELECT * FROM settings WHERE userId = ? LIMIT 1', [req.user.id], (err, row) => {
     if (err) return res.status(400).json({ error: err.message });
-    res.json(row || { followUpDelay: 4, emailTemplate: '', currency: '$', smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '', stripeSecretKey: '' });
+    res.json(row || { followUpDelay: 4, emailTemplate: '', currency: '$', smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '', stripeSecretKey: '', stripeWebhookSecret: '' });
   });
 });
 
 app.post('/api/settings', authenticateToken, (req, res) => {
-  const { followUpDelay, emailTemplate, currency = '$', smtpHost = '', smtpPort = 587, smtpUser = '', smtpPass = '', stripeSecretKey = '' } = req.body;
+  const { followUpDelay, emailTemplate, currency = '$', smtpHost = '', smtpPort = 587, smtpUser = '', smtpPass = '', stripeSecretKey = '', stripeWebhookSecret = '' } = req.body;
   
   db.get('SELECT id FROM settings WHERE userId = ?', [req.user.id], (err, row) => {
     if (row) {
-      db.run(`UPDATE settings SET followUpDelay=?, emailTemplate=?, currency=?, smtpHost=?, smtpPort=?, smtpUser=?, smtpPass=?, stripeSecretKey=? WHERE userId=?`, 
-        [followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass, stripeSecretKey, req.user.id], 
+      db.run(`UPDATE settings SET followUpDelay=?, emailTemplate=?, currency=?, smtpHost=?, smtpPort=?, smtpUser=?, smtpPass=?, stripeSecretKey=?, stripeWebhookSecret=? WHERE userId=?`, 
+        [followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass, stripeSecretKey, stripeWebhookSecret, req.user.id], 
         function(err) {
           if (err) return res.status(400).json({ error: err.message });
           res.json({ success: true });
       });
     } else {
-      db.run(`INSERT INTO settings (userId, followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass, stripeSecretKey) VALUES (?,?,?,?,?,?,?,?,?)`, 
-        [req.user.id, followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass, stripeSecretKey], 
+      db.run(`INSERT INTO settings (userId, followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass, stripeSecretKey, stripeWebhookSecret) VALUES (?,?,?,?,?,?,?,?,?,?)`, 
+        [req.user.id, followUpDelay, emailTemplate, currency, smtpHost, smtpPort, smtpUser, smtpPass, stripeSecretKey, stripeWebhookSecret], 
         function(err) {
           if (err) return res.status(400).json({ error: err.message });
           res.json({ success: true });

@@ -12,7 +12,7 @@ import ReportsView from './components/ReportsView';
 import AuthView from './components/AuthView';
 import LandingPageView from './components/LandingPageView';
 import { useToast } from './components/ToastContext';
-import { Search, Bell, LogOut, Plus, DollarSign, TrendingUp, Users, Target, CheckCircle, Activity, Box, ChevronDown } from 'lucide-react';
+import { Search, Bell, LogOut, Plus, DollarSign, TrendingUp, Users, Target, CheckCircle, Activity, Box, ChevronDown, Menu, Zap, ArrowLeft } from 'lucide-react';
 import './App.css';
 
 function App() {
@@ -20,6 +20,8 @@ function App() {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
   
   const [showAuth, setShowAuth] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [theme, setTheme] = useState('light');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState(null);
@@ -201,32 +203,57 @@ function App() {
 
   return (
     <div className="app-container">
-      <Sidebar theme={theme} toggleTheme={toggleTheme} currentView={currentView} setView={setCurrentView} onLogout={logout} user={user} />
+      <div className={`mobile-overlay ${isMobileMenuOpen ? 'open' : ''}`} onClick={() => setIsMobileMenuOpen(false)}></div>
+      <Sidebar theme={theme} toggleTheme={toggleTheme} currentView={currentView} setView={(v) => { setCurrentView(v); setIsMobileMenuOpen(false); }} onLogout={logout} user={user} isOpen={isMobileMenuOpen} />
       
+      <div className="mobile-header">
+        <div className="logo" style={{ gap: '8px' }}>
+          <Zap className="logo-icon" size={28} color="var(--primary)" strokeWidth={3} />
+          <span style={{ fontSize: '1.4rem', fontWeight: 900, letterSpacing: '-0.05em' }}>CatchUp</span>
+        </div>
+        <button onClick={() => setIsMobileMenuOpen(true)} style={{ background: 'transparent', border: 'none', color: 'var(--text)', cursor: 'pointer', padding: 0 }}>
+          <Menu size={28} />
+        </button>
+      </div>
+
       <main className="main-content">
         <header className="top-nav" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', background: 'var(--surface)', padding: '16px 24px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-          <div className="search-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-muted)', background: 'var(--bg)', padding: '10px 16px', borderRadius: '50px', width: '350px' }}>
-            <Search size={18} /> <input type="text" placeholder="Search leads, tasks, reports..." style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontFamily: 'inherit', color: 'var(--text)' }} />
-          </div>
-          <div className="top-nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <button className="btn btn-primary" style={{ borderRadius: '50px', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }} onClick={() => setIsModalOpen(true)}>
-              <Plus size={18} /> New Lead
-            </button>
-            <Bell size={20} style={{ color: 'var(--text)', cursor: 'pointer' }} />
-            <div className="profile-menu" style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-              <img src={`https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random&color=fff&rounded=true`} alt="Avatar" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
-              <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{user?.name || 'User'}</div>
-              <ChevronDown size={14} color="var(--text-muted)" />
+          {isMobileSearchOpen ? (
+            <div className="mobile-search-active">
+              <button onClick={() => setIsMobileSearchOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', padding: '4px', display: 'flex' }}>
+                <ArrowLeft size={20} />
+              </button>
+              <input type="text" placeholder="Search everywhere..." autoFocus style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontFamily: 'inherit', color: 'var(--text)', fontSize: '1rem' }} />
             </div>
-            <button onClick={logout} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px' }} title="Log out">
-              <LogOut size={20} />
-            </button>
-          </div>
+          ) : (
+            <>
+              <div className="search-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-muted)', background: 'var(--bg)', padding: '10px 16px', borderRadius: '50px', width: '350px' }}>
+                <div onClick={() => setIsMobileSearchOpen(true)} style={{ display: 'flex', cursor: 'pointer' }}><Search size={18} /></div> 
+                <input type="text" placeholder="Search leads, tasks, reports..." style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontFamily: 'inherit', color: 'var(--text)' }} />
+              </div>
+              <div className="top-nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                <button className="btn btn-primary" style={{ borderRadius: '50px', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }} onClick={() => setIsModalOpen(true)}>
+                  <Plus size={18} /> New Lead
+                </button>
+                <Bell size={20} style={{ color: 'var(--text)', cursor: 'pointer' }} />
+                <div className="profile-menu" style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                    {(user?.name || 'User').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{user?.name || 'User'}</div>
+                  <ChevronDown size={14} color="var(--text-muted)" />
+                </div>
+                <button onClick={logout} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px' }} title="Log out">
+                  <LogOut size={20} />
+                </button>
+              </div>
+            </>
+          )}
         </header>
 
         <div className="dashboard-title" style={{ marginBottom: '24px' }}>
-          <h1 style={{ marginBottom: '8px', textTransform: 'capitalize', fontSize: '1.5rem', fontWeight: 700 }}>{currentView}</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+          <h1 className="mobile-text-lg" style={{ marginBottom: '8px', textTransform: 'capitalize', fontSize: '1.5rem', fontWeight: 700 }}>{currentView}</h1>
+          <p className="mobile-text-sm" style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
             {currentView === 'dashboard' ? `Welcome back! Here's what's happening today.` : 
              currentView === 'settings' ? 'Manage your preferences.' :
              currentView === 'leads' ? 'View and manage your entire pipeline.' :
@@ -249,12 +276,12 @@ function App() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '8px', fontWeight: 600 }}><Target size={16} /> Expected Recovery</div>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text)', marginBottom: '4px' }}>{forecastDeals} Deals</div>
+                    <div className="mobile-text-xl" style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text)', marginBottom: '4px' }}>{forecastDeals} Deals</div>
                     <div style={{ color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 600 }}>Based on pipeline size</div>
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '8px', fontWeight: 600 }}><DollarSign size={16} /> Forecast Payout</div>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text)', marginBottom: '4px' }}>{settings.currency}{forecastPayout.toLocaleString()}</div>
+                    <div className="mobile-text-xl" style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text)', marginBottom: '4px' }}>{settings.currency}{forecastPayout.toLocaleString()}</div>
                     <div style={{ color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 600 }}>Expected realization</div>
                   </div>
                 </div>
@@ -263,8 +290,8 @@ function App() {
               <div className="dashboard-card">
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 600, marginBottom: '16px' }}>Recovery Impact</h3>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 700, lineHeight: 1 }}>{autoRecoveredDeals}</div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 500 }}>Deals saved automatically via email</div>
+                  <div className="mobile-text-xl" style={{ fontSize: '1.8rem', fontWeight: 700, lineHeight: 1 }}>{autoRecoveredDeals}</div>
+                  <div className="mobile-text-sm" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 500 }}>Deals saved automatically via email</div>
                 </div>
                 <div style={{ width: '100%', background: 'var(--bg)', height: '10px', borderRadius: '50px', marginBottom: '8px', overflow: 'hidden' }}>
                   <div style={{ width: `${autoRecoveryRate}%`, background: 'var(--primary)', height: '100%', borderRadius: '50px' }}></div>
@@ -295,8 +322,8 @@ function App() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 600 }}>7-Day Recovery Trend</h3>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{settings.currency}{recentRecoveredVal.toLocaleString()}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 500 }}>Recent Rescues</div>
+                    <div className="mobile-text-xl" style={{ fontWeight: 700, fontSize: '1.2rem' }}>{settings.currency}{recentRecoveredVal.toLocaleString()}</div>
+                    <div className="mobile-text-sm" style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 500 }}>Recent Rescues</div>
                   </div>
                 </div>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', borderRadius: '8px', border: '1px dashed var(--border)', minHeight: '120px' }}>
@@ -350,6 +377,8 @@ function App() {
           <SettingsView 
             currentSettings={settings} 
             token={token}
+            user={user}
+            onProfileUpdated={handleAuthSuccess}
             onSettingsSaved={() => {
               fetch('/api/settings', { headers: authHeaders }).then(res => res.json()).then(setSettings);
               addToast('Settings saved successfully', 'success');

@@ -1,9 +1,9 @@
 import React from 'react';
 import { LayoutDashboard, Users, CheckSquare, BarChart3, Settings, Zap, Sun, Moon } from 'lucide-react';
 
-const Sidebar = ({ theme, toggleTheme, currentView, setView }) => {
+const Sidebar = ({ theme, toggleTheme, currentView, setView, onLogout, user, isOpen }) => {
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
         <div className="logo">
           <Zap className="logo-icon" size={32} color="var(--primary)" strokeWidth={3} />
