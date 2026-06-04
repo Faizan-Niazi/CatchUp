@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import MetricCard from './components/MetricCard';
 import LeadTable from './components/LeadTable';
@@ -30,7 +30,21 @@ function App() {
   const [settings, setSettings] = useState({ currency: '$', followUpDelay: 4, emailTemplate: '' });
   const [analytics, setAnalytics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
   const { addToast } = useToast();
+  const notificationsRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -201,6 +215,13 @@ function App() {
   
   const autoRecoveryRate = recoveredCount > 0 ? Math.round((autoRecoveredDeals / recoveredCount) * 100) : 0;
 
+  const notifications = leads.map(l => {
+    if (l.status === 'Recovered') return { id: `rec_${l.id}`, text: `Payment received for ${l.projectName || l.name}`, time: 'Recent', type: 'success' };
+    if (l.status === 'Contacted') return { id: `cont_${l.id}`, text: `Automated follow-up sent to ${l.name}`, time: 'Recent', type: 'success' };
+    if (l.status === 'Pending' && l.daysWaiting >= l.targetDays) return { id: `over_${l.id}`, text: `Follow-up due for ${l.name}`, time: 'Action Required', type: 'warning' };
+    return null;
+  }).filter(Boolean).slice(0, 5);
+
   return (
     <div className="app-container">
       <div className={`mobile-overlay ${isMobileMenuOpen ? 'open' : ''}`} onClick={() => setIsMobileMenuOpen(false)}></div>
@@ -233,19 +254,39 @@ function App() {
               </div>
               <div className="top-nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                 <button className="btn btn-primary" style={{ borderRadius: '50px', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }} onClick={() => setIsModalOpen(true)}>
-                  <Plus size={18} /> New Lead
+                  <Plus size={18} /> <span className="btn-text">New Lead</span>
                 </button>
-                <Bell size={20} style={{ color: 'var(--text)', cursor: 'pointer' }} />
-                <div className="profile-menu" style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                <div ref={notificationsRef} style={{ position: 'relative' }}>
+                  <Bell size={20} style={{ color: 'var(--text)', cursor: 'pointer' }} onClick={() => setShowNotifications(!showNotifications)} />
+                  {notifications.length > 0 && <div style={{ position: 'absolute', top: '-4px', right: '-4px', width: '10px', height: '10px', background: 'var(--danger)', borderRadius: '50%' }}></div>}
+                  {showNotifications && (
+                    <div className="glass-panel" style={{ position: 'absolute', top: '30px', right: '-10px', width: '320px', padding: '16px', borderRadius: '12px', zIndex: 100, boxShadow: '0 10px 40px rgba(0,0,0,0.2)', textAlign: 'left' }}>
+                      <h4 style={{ marginBottom: '12px', fontSize: '0.95rem', fontWeight: 700 }}>Notifications</h4>
+                      {notifications.length === 0 ? (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>You're all caught up!</p>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {notifications.map(n => (
+                            <div key={n.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: n.type === 'success' ? 'var(--primary)' : 'var(--danger)', marginTop: '6px', flexShrink: 0 }}></div>
+                              <div>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)' }}>{n.text}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{n.time}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="profile-menu" onClick={() => setCurrentView('settings')} style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
                   <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.9rem' }}>
                     {(user?.name || 'User').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                   </div>
                   <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{user?.name || 'User'}</div>
                   <ChevronDown size={14} color="var(--text-muted)" />
                 </div>
-                <button onClick={logout} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px' }} title="Log out">
-                  <LogOut size={20} />
-                </button>
               </div>
             </>
           )}
@@ -366,7 +407,7 @@ function App() {
         )}
         
         {currentView === 'leads' && (
-          <LeadsView leads={leads} toggleAutoFollowUp={toggleAutoFollowUp} deleteLead={deleteLead} onEdit={setEditingLead} markAsPaid={markAsPaid} onGeneratePaymentLink={generatePaymentLink} currency={settings.currency} />
+          <LeadsView leads={leads} toggleAutoFollowUp={toggleAutoFollowUp} deleteLead={deleteLead} onEdit={setEditingLead} markAsPaid={markAsPaid} onGeneratePaymentLink={generatePaymentLink} currency={settings.currency} onAddLead={() => setIsModalOpen(true)} />
         )}
 
         {currentView === 'tasks' && <TasksView token={token} />}

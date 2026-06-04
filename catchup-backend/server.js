@@ -378,7 +378,7 @@ setInterval(() => {
         }
 
         // 1. Increment days waiting for this user's leads
-        db.run(`UPDATE leads SET daysWaiting = daysWaiting + 1 WHERE status = 'Pending' AND autoFollowUp = 1 AND userId = ?`, [user.id], function(err) {
+        db.run(`UPDATE leads SET daysWaiting = daysWaiting + 1 WHERE status = 'Pending' AND userId = ?`, [user.id], function(err) {
           if (err) return;
           
           // 2. Find leads for this user needing followup

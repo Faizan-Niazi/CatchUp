@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import LeadTable from './LeadTable';
 import { Search, Filter, Download } from 'lucide-react';
 
-const LeadsView = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, onGeneratePaymentLink, currency }) => {
+const LeadsView = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, onGeneratePaymentLink, currency, onAddLead }) => {
   const [search, setSearch] = useState('');
 
   const filteredLeads = leads.filter(l => 
@@ -45,6 +45,7 @@ const LeadsView = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, 
         markAsPaid={markAsPaid} 
         onGeneratePaymentLink={onGeneratePaymentLink}
         currency={currency} 
+        onAddLead={onAddLead}
       />
     </div>
   );

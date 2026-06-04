@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowUpDown, Filter, ChevronRight, CheckCircle, Link as LinkIcon, Edit2, Trash2, Inbox } from 'lucide-react';
+import { ArrowUpDown, Filter, ChevronRight, CheckCircle, Link as LinkIcon, Edit2, Trash2, Inbox, PlusCircle } from 'lucide-react';
 
-const LeadTable = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, onGeneratePaymentLink, currency }) => {
+const LeadTable = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, onGeneratePaymentLink, currency, onAddLead }) => {
   const [expandedRows, setExpandedRows] = useState(new Set());
 
   const toggleRow = (id) => {
@@ -151,6 +151,19 @@ const LeadTable = ({ leads, toggleAutoFollowUp, deleteLead, onEdit, markAsPaid, 
               )}
             </React.Fragment>
           ))}
+          {leads.length > 0 && (
+            <tr>
+              <td colSpan="5" style={{ padding: '24px', textAlign: 'center' }}>
+                <button 
+                  onClick={onAddLead}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '0 auto', background: 'transparent', border: 'none', color: 'var(--primary)', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+                >
+                  <PlusCircle size={24} />
+                  Add New Lead
+                </button>
+              </td>
+            </tr>
+          )}
           {leads.length === 0 && (
             <tr>
               <td colSpan="5" style={{ textAlign: 'center', padding: '64px 32px' }}>

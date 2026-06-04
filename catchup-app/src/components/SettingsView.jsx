@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings2, Mail, Server, Save, DollarSign, User } from 'lucide-react';
+import { Settings2, Mail, Server, Save, DollarSign, User, ArrowLeft } from 'lucide-react';
 import { useToast } from './ToastContext';
 
 const SettingsView = ({ currentSettings, onSettingsSaved, token, user, onProfileUpdated }) => {
@@ -22,6 +22,7 @@ const SettingsView = ({ currentSettings, onSettingsSaved, token, user, onProfile
   
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  const [showMobileDetail, setShowMobileDetail] = useState(false);
 
   const authHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 
@@ -83,11 +84,14 @@ const SettingsView = ({ currentSettings, onSettingsSaved, token, user, onProfile
       </div>
 
       <div className="settings-layout" style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
-        <div className="settings-tabs" style={{ width: '240px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div className={`settings-tabs ${showMobileDetail ? 'mobile-hidden' : ''}`} style={{ width: '240px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {tabs.map(tab => (
             <button 
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setShowMobileDetail(true);
+              }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '8px',
                 background: activeTab === tab.id ? 'var(--surface)' : 'transparent',
@@ -103,7 +107,12 @@ const SettingsView = ({ currentSettings, onSettingsSaved, token, user, onProfile
           ))}
         </div>
 
-        <div className="dashboard-card" style={{ flex: 1, padding: '32px', minHeight: '400px' }}>
+        <div className={`dashboard-card settings-content-card ${showMobileDetail ? 'mobile-visible' : ''}`} style={{ flex: 1, padding: '32px', minHeight: '400px' }}>
+          {showMobileDetail && (
+            <button className="settings-back-btn" onClick={() => setShowMobileDetail(false)}>
+              <ArrowLeft size={16} /> Back to Settings
+            </button>
+          )}
           {activeTab === 'profile' && (
             <div className="fade-in">
               <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>User Profile</h3>
@@ -221,7 +230,7 @@ const SettingsView = ({ currentSettings, onSettingsSaved, token, user, onProfile
         </div>
       </div>
       
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+      <div className={`settings-save-container ${showMobileDetail ? 'mobile-visible' : ''}`} style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
         <button className="btn btn-primary" onClick={handleSave} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 32px', borderRadius: '8px', fontWeight: 600, fontSize: '1.05rem', width: '100%', justifyContent: 'center' }} disabled={saving}>
           <Save size={20} /> {saving ? 'Saving...' : 'Save Changes'}
         </button>

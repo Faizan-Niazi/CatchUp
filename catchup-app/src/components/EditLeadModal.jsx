@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import { X } from 'lucide-react';
 import { useToast } from './ToastContext';
 
 const EditLeadModal = ({ lead, onClose, onEdit, currency }) => {
@@ -32,9 +32,20 @@ const EditLeadModal = ({ lead, onClose, onEdit, currency }) => {
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content glass-panel">
-        <h2 style={{ marginBottom: '24px' }}>Edit Lead</h2>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content glass-panel" onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h2 style={{ margin: 0 }}>Edit Lead</h2>
+          <button 
+            type="button" 
+            onClick={onClose} 
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px', borderRadius: '50%', transition: 'all 0.2s', width: '32px', height: '32px' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <X size={20} />
+          </button>
+        </div>
         <form onSubmit={handleSubmit} className="flex-col">
           <div className="input-group">
             <label>Client Name</label>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import { X } from 'lucide-react';
 import { useToast } from './ToastContext';
 
 const AddLeadModal = ({ onClose, onAdd, currency }) => {
@@ -35,64 +35,77 @@ const AddLeadModal = ({ onClose, onAdd, currency }) => {
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content glass-panel">
-        <h2 style={{ marginBottom: '24px' }}>Add New Lead</h2>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content glass-panel" onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h2 style={{ margin: 0 }}>Add New Lead</h2>
+          <button 
+            type="button" 
+            onClick={onClose} 
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px', borderRadius: '50%', transition: 'all 0.2s', width: '32px', height: '32px' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <X size={20} />
+          </button>
+        </div>
         <form onSubmit={handleSubmit} className="flex-col">
-          <div className="input-group">
-            <label>Client Name</label>
-            <input 
-              type="text" 
-              className="input-field" 
-              placeholder="e.g. Acme Corp" 
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="input-group">
-            <label>Client Email</label>
-            <input 
-              type="email" 
-              className="input-field" 
-              placeholder="client@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className="input-group">
-            <label>Project Name</label>
-            <input 
-              type="text" 
-              className="input-field" 
-              placeholder="e.g. Web Development Deal"
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="input-group">
-            <label>Deal Value ({currency})</label>
-            <input 
-              type="number" 
-              className="input-field" 
-              placeholder="2500"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              required
-            />
-          </div>
-          <div className="input-group">
-            <label>Follow-up Delay (Days)</label>
-            <input 
-              type="number" 
-              className="input-field" 
-              value={targetDays}
-              onChange={(e) => setTargetDays(e.target.value)}
-              min="1"
-              required
-            />
+          <div className="form-grid">
+            <div className="input-group">
+              <label>Client Name</label>
+              <input 
+                type="text" 
+                className="input-field" 
+                placeholder="e.g. Acme Corp" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="input-group">
+              <label>Client Email</label>
+              <input 
+                type="email" 
+                className="input-field" 
+                placeholder="client@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="input-group">
+              <label>Project Name</label>
+              <input 
+                type="text" 
+                className="input-field" 
+                placeholder="e.g. Web Development Deal"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="input-group">
+              <label>Deal Value ({currency})</label>
+              <input 
+                type="number" 
+                className="input-field" 
+                placeholder="2500"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                required
+              />
+            </div>
+            <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+              <label>Follow-up Delay (Days)</label>
+              <input 
+                type="number" 
+                className="input-field" 
+                value={targetDays}
+                onChange={(e) => setTargetDays(e.target.value)}
+                min="1"
+                required
+              />
+            </div>
           </div>
           <div className="input-group">
             <label>Custom Message (Optional)</label>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, CheckSquare, BarChart3, Settings, Zap, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Users, CheckSquare, BarChart3, Settings, Zap, Sun, Moon, LogOut } from 'lucide-react';
 
 const Sidebar = ({ theme, toggleTheme, currentView, setView, onLogout, user, isOpen }) => {
   return (
@@ -44,6 +44,9 @@ const Sidebar = ({ theme, toggleTheme, currentView, setView, onLogout, user, isO
       <div className="sidebar-footer">
         <button className="theme-toggle" onClick={toggleTheme} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
           {theme === 'dark' ? <><Sun size={18} /> Light Mode</> : <><Moon size={18} /> Dark Mode</>}
+        </button>
+        <button className="theme-toggle" onClick={onLogout} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '12px', color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.1)' }}>
+          <LogOut size={18} /> Log Out
         </button>
       </div>
     </aside>
