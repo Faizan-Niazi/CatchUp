@@ -2,6 +2,8 @@
 
 > Never let a pending deal slip through the cracks. CatchUp is your smart financial assistant that tracks pending invoices, automates follow-up emails, and lets clients pay instantly.
 
+**🌐 Live Demo:** [https://catchup-x6sy.onrender.com/](https://catchup-x6sy.onrender.com/)
+
 ---
 
 ## 🚀 Key Features
