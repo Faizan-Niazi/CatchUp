@@ -4,3 +4,11 @@ node_modules/
 dist/
 build/
 catchup.db
+
+# GitNexus
+.gitnexus/
+AGENTS.md
+CLAUDE.md
+
+# IDE/AI
+.claude/
