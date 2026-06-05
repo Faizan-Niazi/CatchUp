@@ -59,5 +59,7 @@
 ## 🎨 UI/UX Highlights
 
 * **Unified Branding**: Uses the sleek `Outfit` Google font globally.
-* **Responsive Design**: Looks perfect on mobile, tablet, and desktop.
-* **Micro-interactions**: Smooth hover states, float animations on mockups, and sliding toast notifications.
+* **Responsive Design**: Adapts beautifully across desktops, tablets, and phones, including a mobile-native drill-down menu for settings view.
+* **Click-Outside Dismissals**: Interactive elements like notification lists and modal popups automatically close when clicking anywhere outside of them.
+* **Micro-interactions**: Smooth hover states, float animations on mockups, hover close buttons, and sliding toast notifications.
+* **Ultra-Mobile Optimization**: Action buttons automatically morph into space-saving circular icons on screens under 500px to maintain clean alignment.
