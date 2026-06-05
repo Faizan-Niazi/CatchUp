@@ -87,7 +87,7 @@ function App() {
           const settingsData = await settingsRes.json();
           const analyticsData = await analyticsRes.json();
           setLeads(leadsData);
-          setSettings(settingsData);
+          setSettings(prev => ({ ...prev, ...settingsData }));
           setAnalytics(analyticsData);
         } else if (leadsRes.status === 401 || leadsRes.status === 403) {
           logout();

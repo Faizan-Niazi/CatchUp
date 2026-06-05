@@ -327,7 +327,7 @@ app.get('/api/analytics', authenticateToken, (req, res) => {
 app.get('/api/settings', authenticateToken, (req, res) => {
   db.get('SELECT * FROM settings WHERE userId = ? LIMIT 1', [req.user.id], (err, row) => {
     if (err) return res.status(400).json({ error: err.message });
-    res.json(row || { followUpDelay: 4, emailTemplate: '', currency: '$', smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '', stripeSecretKey: '', stripeWebhookSecret: '' });
+    res.json(row ? { ...row, currency: row.currency || '$' } : { followUpDelay: 4, emailTemplate: '', currency: '$', smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '', stripeSecretKey: '', stripeWebhookSecret: '' });
   });
 });
 

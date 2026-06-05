@@ -229,7 +229,7 @@ const LandingPageView = ({ onLoginClick }) => {
         </p>
 
         {/* CTA Button */}
-        <div className="flex items-center gap-4 relative z-10 mb-16">
+        <div className="flex items-center gap-4 relative z-10 mt-6 mb-16">
           <button
             type="button"
             onClick={onLoginClick}
